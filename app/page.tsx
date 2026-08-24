@@ -412,17 +412,33 @@ export default function HomePage() {
                           goalTasks.map((task) => (
                             <div
                               key={task.id}
-                              style={{
-                                padding: "10px 12px",
-                                marginTop: "8px",
-                                background: "#f8f7f4",
-                                borderRadius: "8px",
-                              }}
-                            >
-                              ☐ {task.title}
+    style={{
+      padding: "10px 12px",
+      marginTop: "8px",
+      background: "#f8f7f4",
+      borderRadius: "8px",
+    }}
+  >
+    <button
+      type="button"
+      onClick={() => handleToggleTask(task)}
+      style={{
+        background: "none",
+        border: "none",
+        padding: 0,
+        cursor: "pointer",
+        fontSize: "16px",
+        textAlign: "left",
+        color: task.status === "completed" ? "#777" : "#171717",
+        textDecoration:
+          task.status === "completed" ? "line-through" : "none",
+      }}
+    >
+      {task.status === "completed" ? "☑" : "☐"} {task.title}
+    </button>
 
-                              {task.description && (
-                                <div
+    {task.description && (
+      <div
                                   style={{
                                     color: "#777",
                                     fontSize: "14px",
