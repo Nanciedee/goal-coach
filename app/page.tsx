@@ -202,6 +202,42 @@ export default function HomePage() {
     setTaskLoading(false);
   }
 
+  async function handleToggleTask(task: Task) {
+    const newStatus =
+      task.status === "completed" ? "pending" : "completed";
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        status: newStatus,
+        completed_at:
+          newStatus === "completed"
+            ? new Date().toISOString()
+            : null,
+      })
+      .eq("id", task.id)
+      .eq("user_id", userId);
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setTasks((current) =>
+      current.map((item) =>
+        item.id === task.id
+          ? { ...item, status: newStatus }
+          : item
+      )
+    );
+
+    setMessage(
+      newStatus === "completed"
+        ? "Small step completed! 🎉"
+        : "Small step marked as incomplete."
+    );
+  }
+
   if (userId) {
     return (
       <main
