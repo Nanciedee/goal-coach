@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase";
+import { createClient } from "../lib/supabase";
 
 export default function HomePage() {
   const [message, setMessage] = useState("Not connected yet.");
