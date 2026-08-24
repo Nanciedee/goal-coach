@@ -270,9 +270,10 @@ const [showReflection, setShowReflection] = useState(false);
       setMessage(error.message);
     } else {
       setReflectionText("");
-      setReflectionMood("");
-      setShowReflection(false);
-      setMessage("Reflection saved! 💭");
+setReflectionMood("");
+setShowReflection(false);
+setReflectionTaskId(null);
+setMessage("Reflection saved! 💭");
     }
 
     setReflectionLoading(false);
