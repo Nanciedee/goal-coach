@@ -649,7 +649,7 @@ const [showReflection, setShowReflection] = useState(false);
       cursor: "pointer",
       textDecoration: "underline",
     }}
-  >
+   >
     Reflect on this
   </button>
 )}
