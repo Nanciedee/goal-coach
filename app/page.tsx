@@ -8,24 +8,21 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
 
   async function testConnection() {
-    setLoading(true);
-    setMessage("Checking Supabase...");
+  setLoading(true);
+  setMessage("Checking Supabase...");
 
-    const supabase = createClient();
+  const supabase = createClient();
 
-    const { error } = await supabase
-      .from("profiles")
-      .select("id")
-      .limit(1);
+  const { error } = await supabase.auth.getSession();
 
-    if (error) {
-      setMessage(`Connection error: ${error.message}`);
-    } else {
-      setMessage("Supabase is connected! 🎉");
-    }
-
-    setLoading(false);
+  if (error) {
+    setMessage(`Connection error: ${error.message}`);
+  } else {
+    setMessage("Supabase is connected! 🎉");
   }
+
+  setLoading(false);
+}
 
   return (
     <main
