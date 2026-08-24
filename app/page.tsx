@@ -34,15 +34,18 @@ export default function HomePage() {
   const [goals, setGoals] = useState<Goal[]>([]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
-const [taskTitle, setTaskTitle] = useState("");
-const [taskDescription, setTaskDescription] = useState("");
-const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-const [taskLoading, setTaskLoading] = useState(false);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [taskLoading, setTaskLoading] = useState(false);
 
-const [reflectionText, setReflectionText] = useState("");
-const [reflectionMood, setReflectionMood] = useState("");
-const [reflectionLoading, setReflectionLoading] = useState(false);
-const [showReflection, setShowReflection] = useState(false);
+  const [reflectionText, setReflectionText] = useState("");
+  const [reflectionMood, setReflectionMood] = useState("");
+  const [reflectionLoading, setReflectionLoading] = useState(false);
+  const [showReflection, setShowReflection] = useState(false);
+  const [reflectionTaskId, setReflectionTaskId] = useState<string | null>(
+    null
+  );
 
   async function loadGoals(id: string) {
     const { data, error } = await supabase
@@ -270,10 +273,10 @@ const [showReflection, setShowReflection] = useState(false);
       setMessage(error.message);
     } else {
       setReflectionText("");
-setReflectionMood("");
-setShowReflection(false);
-setReflectionTaskId(null);
-setMessage("Reflection saved! 💭");
+      setReflectionMood("");
+      setShowReflection(false);
+      setReflectionTaskId(null);
+      setMessage("Reflection saved! 💭");
     }
 
     setReflectionLoading(false);
@@ -304,104 +307,121 @@ setMessage("Reflection saved! 💭");
               boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
             }}
           >
-            <h1 style={{ fontSize: "40px", margin: 0 }}>Goal Coach</h1>
+            <h1 style={{ fontSize: "40px", margin: 0 }}>
+              Goal Coach
+            </h1>
 
             <p style={{ color: "#666", fontSize: "18px" }}>
               One thing at a time.
             </p>
 
             <hr
-  style={{
-    border: "none",
-    borderTop: "1px solid #eee",
-    margin: "28px 0",
-   }}
-/>
-
-<div
-  style={{
-    background: "#f8f7f4",
-    padding: "20px",
-    borderRadius: "14px",
-    marginBottom: "30px",
-  }}
->
-  <h2 style={{ marginTop: 0 }}>Today's focus</h2>
-
-  {tasks.length === 0 ? (
-    <p style={{ color: "#666", marginBottom: 0 }}>
-      Choose one small step to get started.
-    </p>
-  ) : (
-    (() => {
-      const nextTask =
-        tasks.find((task) => task.status !== "completed") || tasks[0];
-
-      const taskGoal = goals.find(
-        (goal) => goal.id === nextTask.goal_id
-      );
-
-      const isCompleted = nextTask.status === "completed";
-
-      return (
-        <div>
-          <p
-            style={{
-              fontSize: "18px",
-              fontWeight: "bold",
-              marginBottom: "8px",
-            }}
-          >
-            {isCompleted ? "☑" : "☐"} {nextTask.title}
-          </p>
-
-          {taskGoal && (
-            <p
               style={{
-                color: "#666",
-                marginTop: 0,
-                marginBottom: "8px",
+                border: "none",
+                borderTop: "1px solid #eee",
+                margin: "28px 0",
+              }}
+            />
+
+            {/* TODAY'S FOCUS */}
+
+            <div
+              style={{
+                background: "#f8f7f4",
+                padding: "20px",
+                borderRadius: "14px",
+                marginBottom: "30px",
               }}
             >
-              Goal: {taskGoal.title}
+              <h2 style={{ marginTop: 0 }}>
+                Today's focus
+              </h2>
+
+              {tasks.length === 0 ? (
+                <p
+                  style={{
+                    color: "#666",
+                    marginBottom: 0,
+                  }}
+                >
+                  Choose one small step to get started.
+                </p>
+              ) : (
+                (() => {
+                  const nextTask =
+                    tasks.find(
+                      (task) => task.status !== "completed"
+                    ) || tasks[0];
+
+                  const taskGoal = goals.find(
+                    (goal) => goal.id === nextTask.goal_id
+                  );
+
+                  const isCompleted =
+                    nextTask.status === "completed";
+
+                  return (
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: "bold",
+                          marginBottom: "8px",
+                        }}
+                      >
+                        {isCompleted ? "☑" : "☐"}{" "}
+                        {nextTask.title}
+                      </p>
+
+                      {taskGoal && (
+                        <p
+                          style={{
+                            color: "#666",
+                            marginTop: 0,
+                            marginBottom: "8px",
+                          }}
+                        >
+                          Goal: {taskGoal.title}
+                        </p>
+                      )}
+
+                      {nextTask.description && (
+                        <p
+                          style={{
+                            color: "#777",
+                            marginTop: "8px",
+                            marginBottom: 0,
+                          }}
+                        >
+                          {nextTask.description}
+                        </p>
+                      )}
+
+                      {isCompleted && (
+                        <p
+                          style={{
+                            color: "#555",
+                            fontWeight: "bold",
+                            marginBottom: 0,
+                          }}
+                        >
+                          You did it! 🎉
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+
+            {/* CREATE GOAL */}
+
+            <h2>What would you like to work on?</h2>
+
+            <p style={{ color: "#666" }}>
+              Start with one goal. You can always add another
+              later.
             </p>
-          )}
-
-          {nextTask.description && (
-            <p
-              style={{
-                color: "#777",
-                marginTop: "8px",
-                marginBottom: 0,
-              }}
-            >
-              {nextTask.description}
-            </p>
-          )}
-
-          {isCompleted && (
-            <p
-              style={{
-                color: "#555",
-                fontWeight: "bold",
-                marginBottom: 0,
-              }}
-            >
-              You did it! 🎉
-            </p>
-          )}
-        </div>
-      );
-    })()
-  )}
-</div>
-
-<h2>What would you like to work on?</h2>
-
-<p style={{ color: "#666" }}>
-  Start with one goal. You can always add another later.
-</p>
-
 
             <form onSubmit={handleCreateGoal}>
               <label
@@ -419,7 +439,9 @@ setMessage("Reflection saved! 💭");
                 id="goalTitle"
                 type="text"
                 value={goalTitle}
-                onChange={(e) => setGoalTitle(e.target.value)}
+                onChange={(e) =>
+                  setGoalTitle(e.target.value)
+                }
                 placeholder="Example: Walk for 20 minutes each day"
                 style={{
                   width: "100%",
@@ -445,7 +467,9 @@ setMessage("Reflection saved! 💭");
               <textarea
                 id="goalDescription"
                 value={goalDescription}
-                onChange={(e) => setGoalDescription(e.target.value)}
+                onChange={(e) =>
+                  setGoalDescription(e.target.value)
+                }
                 rows={4}
                 placeholder="A few words about why you want to do this..."
                 style={{
@@ -471,12 +495,18 @@ setMessage("Reflection saved! 💭");
                   border: "none",
                   borderRadius: "10px",
                   fontSize: "16px",
-                  cursor: goalLoading ? "default" : "pointer",
+                  cursor: goalLoading
+                    ? "default"
+                    : "pointer",
                 }}
               >
-                {goalLoading ? "Saving..." : "Save my goal"}
+                {goalLoading
+                  ? "Saving..."
+                  : "Save my goal"}
               </button>
             </form>
+
+            {/* MESSAGE */}
 
             {message && (
               <p
@@ -491,6 +521,8 @@ setMessage("Reflection saved! 💭");
                 {message}
               </p>
             )}
+
+            {/* YOUR GOALS */}
 
             {goals.length > 0 && (
               <div style={{ marginTop: "35px" }}>
@@ -511,80 +543,112 @@ setMessage("Reflection saved! 💭");
                         borderRadius: "12px",
                       }}
                     >
-                      <strong style={{ fontSize: "18px" }}>
+                      <strong
+                        style={{ fontSize: "18px" }}
+                      >
                         {goal.title}
                       </strong>
 
                       {goal.description && (
-  <p style={{ color: "#666" }}>{goal.description}</p>
-)}
+                        <p style={{ color: "#666" }}>
+                          {goal.description}
+                        </p>
+                      )}
 
-<div style={{ marginTop: "20px" }}>
-  {(() => {
-    const completedTasks = goalTasks.filter(
-      (task) => task.status === "completed"
-    ).length;
+                      {/* PROGRESS */}
 
-    const totalTasks = goalTasks.length;
+                      <div style={{ marginTop: "20px" }}>
+                        {(() => {
+                          const completedTasks =
+                            goalTasks.filter(
+                              (task) =>
+                                task.status === "completed"
+                            ).length;
 
-    const progress =
-      totalTasks === 0
-        ? 0
-        : Math.round((completedTasks / totalTasks) * 100);
+                          const totalTasks =
+                            goalTasks.length;
 
-    return (
-      <div style={{ marginBottom: "24px" }}>
-        <h3 style={{ marginBottom: "10px" }}>
-          Progress
-        </h3>
+                          const progress =
+                            totalTasks === 0
+                              ? 0
+                              : Math.round(
+                                  (completedTasks /
+                                    totalTasks) *
+                                    100
+                                );
 
-        <p
-          style={{
-            color: "#666",
-            marginTop: 0,
-            marginBottom: "10px",
-          }}
-        >
-          {completedTasks} of {totalTasks} small{" "}
-          {totalTasks === 1 ? "step" : "steps"} completed
-        </p>
+                          return (
+                            <div
+                              style={{
+                                marginBottom: "24px",
+                              }}
+                            >
+                              <h3
+                                style={{
+                                  marginBottom: "10px",
+                                }}
+                              >
+                                Progress
+                              </h3>
 
-        <div
-          style={{
-            width: "100%",
-            height: "10px",
-            background: "#eee",
-            borderRadius: "10px",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: `${progress}%`,
-              height: "100%",
-              background: "#171717",
-              borderRadius: "10px",
-              transition: "width 0.3s ease",
-            }}
-          />
-        </div>
+                              <p
+                                style={{
+                                  color: "#666",
+                                  marginTop: 0,
+                                  marginBottom: "10px",
+                                }}
+                              >
+                                {completedTasks} of{" "}
+                                {totalTasks} small{" "}
+                                {totalTasks === 1
+                                  ? "step"
+                                  : "steps"}{" "}
+                                completed
+                              </p>
 
-        <p
-          style={{
-            fontSize: "14px",
-            color: "#777",
-            marginTop: "8px",
-          }}
-        >
-          {progress}% complete
-        </p>
-      </div>
-    );
-  })()}
+                              <div
+                                style={{
+                                  width: "100%",
+                                  height: "10px",
+                                  background: "#eee",
+                                  borderRadius: "10px",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: `${progress}%`,
+                                    height: "100%",
+                                    background: "#171717",
+                                    borderRadius: "10px",
+                                    transition:
+                                      "width 0.3s ease",
+                                  }}
+                                />
+                              </div>
 
-  <h3 style={{ marginBottom: "10px" }}>
-    Small steps
-  </h3>
+                              <p
+                                style={{
+                                  fontSize: "14px",
+                                  color: "#777",
+                                  marginTop: "8px",
+                                }}
+                              >
+                                {progress}% complete
+                              </p>
+                            </div>
+                          );
+                        })()}
+
+                        <h3
+                          style={{
+                            marginBottom: "10px",
+                          }}
+                        >
+                          Small steps
+                        </h3>
+
+                        {/* TASKS */}
 
                         {goalTasks.length === 0 ? (
                           <p style={{ color: "#888" }}>
@@ -594,57 +658,277 @@ setMessage("Reflection saved! 💭");
                           goalTasks.map((task) => (
                             <div
                               key={task.id}
-    style={{
-      padding: "10px 12px",
-      marginTop: "8px",
-      background: "#f8f7f4",
-      borderRadius: "8px",
-    }}
-  >
-    <button
-      type="button"
-      onClick={() => handleToggleTask(task)}
-      style={{
-        background: "none",
-        border: "none",
-        padding: 0,
-        cursor: "pointer",
-        fontSize: "16px",
-        textAlign: "left",
-        color: task.status === "completed" ? "#777" : "#171717",
-        textDecoration:
-          task.status === "completed" ? "line-through" : "none",
-      }}
-    >
-      {task.status === "completed" ? "☑" : "☐"} {task.title}
-    </button>
+                              style={{
+                                padding: "10px 12px",
+                                marginTop: "8px",
+                                background: "#f8f7f4",
+                                borderRadius: "8px",
+                              }}
+                            >
+                              {/* TASK BUTTON */}
 
-    {task.description && (
-  <div
-    style={{
-      color: "#777",
-      fontSize: "14px",
-      marginTop: "4px",
-      marginLeft: "20px",
-    }}
-  >
-    {task.description}
-  </div>
-)}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleToggleTask(task)
+                                }
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  padding: 0,
+                                  cursor: "pointer",
+                                  fontSize: "16px",
+                                  textAlign: "left",
+                                  color:
+                                    task.status ===
+                                    "completed"
+                                      ? "#777"
+                                      : "#171717",
+                                  textDecoration:
+                                    task.status ===
+                                    "completed"
+                                      ? "line-through"
+                                      : "none",
+                                }}
+                              >
+                                {task.status ===
+                                "completed"
+                                  ? "☑"
+                                  : "☐"}{" "}
+                                {task.title}
+                              </button>
 
-{task.status === "completed" &&
+                              {/* TASK DESCRIPTION */}
 
+                              {task.description && (
+                                <div
+                                  style={{
+                                    color: "#777",
+                                    fontSize: "14px",
+                                    marginTop: "4px",
+                                    marginLeft: "20px",
+                                  }}
+                                >
+                                  {task.description}
+                                </div>
+                              )}
+
+                              {/* REFLECTION */}
+
+                              {task.status === "completed" && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setShowReflection(
+                                        true
+                                      );
+                                      setReflectionTaskId(
+                                        task.id
+                                      );
+                                      setReflectionText("");
+                                      setReflectionMood("");
+                                      setMessage("");
+                                    }}
+                                    style={{
+                                      marginTop: "10px",
+                                      marginLeft: "20px",
+                                      background: "none",
+                                      border: "none",
+                                      color: "#555",
+                                      cursor: "pointer",
+                                      textDecoration:
+                                        "underline",
+                                    }}
+                                  >
+                                    Reflect on this
+                                  </button>
+
+                                  {showReflection &&
+                                    reflectionTaskId ===
+                                      task.id && (
+                                      <div
+                                        style={{
+                                          marginTop: "15px",
+                                          marginLeft: "20px",
+                                          padding: "15px",
+                                          background:
+                                            "white",
+                                          borderRadius:
+                                            "10px",
+                                          border:
+                                            "1px solid #ddd",
+                                        }}
+                                      >
+                                        <h4
+                                          style={{
+                                            marginTop: 0,
+                                          }}
+                                        >
+                                          How did that go?
+                                        </h4>
+
+                                        <textarea
+                                          value={
+                                            reflectionText
+                                          }
+                                          onChange={(e) =>
+                                            setReflectionText(
+                                              e.target.value
+                                            )
+                                          }
+                                          rows={3}
+                                          placeholder="What did you notice? How did it feel?"
+                                          style={{
+                                            width: "100%",
+                                            padding: "10px",
+                                            border:
+                                              "1px solid #ddd",
+                                            borderRadius:
+                                              "8px",
+                                            fontSize:
+                                              "14px",
+                                            boxSizing:
+                                              "border-box",
+                                            resize:
+                                              "vertical",
+                                          }}
+                                        />
+
+                                        <label
+                                          style={{
+                                            display: "block",
+                                            marginTop: "12px",
+                                            marginBottom:
+                                              "6px",
+                                            fontSize:
+                                              "14px",
+                                          }}
+                                        >
+                                          How are you feeling?
+                                        </label>
+
+                                        <select
+                                          value={
+                                            reflectionMood
+                                          }
+                                          onChange={(e) =>
+                                            setReflectionMood(
+                                              e.target.value
+                                            )
+                                          }
+                                          style={{
+                                            width: "100%",
+                                            padding: "10px",
+                                            border:
+                                              "1px solid #ddd",
+                                            borderRadius:
+                                              "8px",
+                                            fontSize:
+                                              "14px",
+                                            background:
+                                              "white",
+                                          }}
+                                        >
+                                          <option value="">
+                                            Choose one
+                                          </option>
+                                          <option value="great">
+                                            Great 😊
+                                          </option>
+                                          <option value="good">
+                                            Good 🙂
+                                          </option>
+                                          <option value="okay">
+                                            Okay 😐
+                                          </option>
+                                          <option value="difficult">
+                                            Difficult 😕
+                                          </option>
+                                        </select>
+
+                                        <button
+                                          type="button"
+                                          disabled={
+                                            reflectionLoading
+                                          }
+                                          onClick={() =>
+                                            handleSaveReflection(
+                                              task
+                                            )
+                                          }
+                                          style={{
+                                            width: "100%",
+                                            padding: "10px",
+                                            marginTop:
+                                              "12px",
+                                            background:
+                                              "#171717",
+                                            color: "white",
+                                            border: "none",
+                                            borderRadius:
+                                              "8px",
+                                            fontSize:
+                                              "14px",
+                                            cursor:
+                                              reflectionLoading
+                                                ? "default"
+                                                : "pointer",
+                                          }}
+                                        >
+                                          {reflectionLoading
+                                            ? "Saving..."
+                                            : "Save reflection"}
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setShowReflection(
+                                              false
+                                            );
+                                            setReflectionTaskId(
+                                              null
+                                            );
+                                            setReflectionText(
+                                              ""
+                                            );
+                                            setReflectionMood(
+                                              ""
+                                            );
+                                          }}
+                                          style={{
+                                            width: "100%",
+                                            padding: "10px",
+                                            marginTop: "8px",
+                                            background:
+                                              "none",
+                                            border: "none",
+                                            color: "#666",
+                                            cursor: "pointer",
+                                          }}
+                                        >
+                                          Cancel
+                                        </button>
+                                      </div>
+                                    )}
+                                </>
+                              )}
                             </div>
                           ))
                         )}
+
+                        {/* ADD SMALL STEP BUTTON */}
 
                         <button
                           type="button"
                           onClick={() => {
                             setSelectedGoalId(goal.id);
                             setMessage("");
+
                             window.scrollTo({
-                              top: document.body.scrollHeight,
+                              top: document.body
+                                .scrollHeight,
                               behavior: "smooth",
                             });
                           }}
@@ -666,6 +950,8 @@ setMessage("Reflection saved! 💭");
               </div>
             )}
 
+            {/* ADD A SMALL STEP */}
+
             {goals.length > 0 && (
               <div
                 style={{
@@ -677,7 +963,8 @@ setMessage("Reflection saved! 💭");
                 <h2>Add a small step</h2>
 
                 <p style={{ color: "#666" }}>
-                  Break a goal into something small and manageable.
+                  Break a goal into something small and
+                  manageable.
                 </p>
 
                 <form onSubmit={handleCreateTask}>
@@ -696,7 +983,9 @@ setMessage("Reflection saved! 💭");
                     id="taskGoal"
                     value={selectedGoalId || ""}
                     onChange={(e) =>
-                      setSelectedGoalId(e.target.value || null)
+                      setSelectedGoalId(
+                        e.target.value || null
+                      )
                     }
                     style={{
                       width: "100%",
@@ -708,10 +997,15 @@ setMessage("Reflection saved! 💭");
                       background: "white",
                     }}
                   >
-                    <option value="">Choose a goal</option>
+                    <option value="">
+                      Choose a goal
+                    </option>
 
                     {goals.map((goal) => (
-                      <option key={goal.id} value={goal.id}>
+                      <option
+                        key={goal.id}
+                        value={goal.id}
+                      >
                         {goal.title}
                       </option>
                     ))}
@@ -732,7 +1026,9 @@ setMessage("Reflection saved! 💭");
                     id="taskTitle"
                     type="text"
                     value={taskTitle}
-                    onChange={(e) => setTaskTitle(e.target.value)}
+                    onChange={(e) =>
+                      setTaskTitle(e.target.value)
+                    }
                     placeholder="Example: Put on walking shoes"
                     style={{
                       width: "100%",
@@ -758,7 +1054,9 @@ setMessage("Reflection saved! 💭");
                   <textarea
                     id="taskDescription"
                     value={taskDescription}
-                    onChange={(e) => setTaskDescription(e.target.value)}
+                    onChange={(e) =>
+                      setTaskDescription(e.target.value)
+                    }
                     rows={3}
                     placeholder="Anything that will help you complete it..."
                     style={{
@@ -784,10 +1082,14 @@ setMessage("Reflection saved! 💭");
                       border: "none",
                       borderRadius: "10px",
                       fontSize: "16px",
-                      cursor: taskLoading ? "default" : "pointer",
+                      cursor: taskLoading
+                        ? "default"
+                        : "pointer",
                     }}
                   >
-                    {taskLoading ? "Saving..." : "Save small step"}
+                    {taskLoading
+                      ? "Saving..."
+                      : "Save small step"}
                   </button>
                 </form>
               </div>
@@ -797,6 +1099,8 @@ setMessage("Reflection saved! 💭");
       </main>
     );
   }
+
+  {/* LOGIN / SIGNUP */}
 
   return (
     <main
@@ -820,8 +1124,15 @@ setMessage("Reflection saved! 💭");
           boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <h1 style={{ fontSize: "40px", margin: 0 }}>Goal Coach</h1>
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: "32px",
+          }}
+        >
+          <h1 style={{ fontSize: "40px", margin: 0 }}>
+            Goal Coach
+          </h1>
 
           <p style={{ color: "#666", fontSize: "18px" }}>
             One thing at a time.
@@ -829,10 +1140,17 @@ setMessage("Reflection saved! 💭");
         </div>
 
         <h2 style={{ marginBottom: "8px" }}>
-          {mode === "signup" ? "Create your account" : "Welcome back"}
+          {mode === "signup"
+            ? "Create your account"
+            : "Welcome back"}
         </h2>
 
-        <p style={{ color: "#666", marginBottom: "24px" }}>
+        <p
+          style={{
+            color: "#666",
+            marginBottom: "24px",
+          }}
+        >
           {mode === "signup"
             ? "Let's make progress feel manageable."
             : "Let's keep moving forward."}
@@ -841,7 +1159,10 @@ setMessage("Reflection saved! 💭");
         <form onSubmit={handleSubmit}>
           <label
             htmlFor="email"
-            style={{ display: "block", marginBottom: "8px" }}
+            style={{
+              display: "block",
+              marginBottom: "8px",
+            }}
           >
             Email
           </label>
@@ -850,7 +1171,9 @@ setMessage("Reflection saved! 💭");
             id="email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
             required
             style={{
               width: "100%",
@@ -865,7 +1188,10 @@ setMessage("Reflection saved! 💭");
 
           <label
             htmlFor="password"
-            style={{ display: "block", marginBottom: "8px" }}
+            style={{
+              display: "block",
+              marginBottom: "8px",
+            }}
           >
             Password
           </label>
@@ -874,7 +1200,9 @@ setMessage("Reflection saved! 💭");
             id="password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(e) =>
+              setPassword(e.target.value)
+            }
             required
             minLength={6}
             style={{
@@ -899,7 +1227,9 @@ setMessage("Reflection saved! 💭");
               border: "none",
               borderRadius: "10px",
               fontSize: "16px",
-              cursor: loading ? "default" : "pointer",
+              cursor: loading
+                ? "default"
+                : "pointer",
             }}
           >
             {loading
@@ -924,11 +1254,20 @@ setMessage("Reflection saved! 💭");
           </p>
         )}
 
-        <div style={{ textAlign: "center", marginTop: "24px" }}>
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: "24px",
+          }}
+        >
           <button
             type="button"
             onClick={() => {
-              setMode(mode === "signup" ? "login" : "signup");
+              setMode(
+                mode === "signup"
+                  ? "login"
+                  : "signup"
+              );
               setMessage("");
             }}
             style={{
