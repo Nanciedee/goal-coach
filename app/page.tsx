@@ -654,7 +654,6 @@ const [showReflection, setShowReflection] = useState(false);
   </button>
 )}
 
-                              </div>
                             </div>
                           ))
                         )}
