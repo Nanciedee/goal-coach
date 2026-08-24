@@ -10,6 +10,14 @@ type Goal = {
   status: string;
 };
 
+type Task = {
+  id: string;
+  goal_id: string;
+  title: string;
+  description: string | null;
+  status: string;
+};
+
 export default function HomePage() {
   const supabase = createClient();
 
@@ -24,6 +32,12 @@ export default function HomePage() {
   const [goalDescription, setGoalDescription] = useState("");
   const [goalLoading, setGoalLoading] = useState(false);
   const [goals, setGoals] = useState<Goal[]>([]);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskDescription, setTaskDescription] = useState("");
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+  const [taskLoading, setTaskLoading] = useState(false);
 
   async function loadGoals(id: string) {
     const { data, error } = await supabase
@@ -40,6 +54,21 @@ export default function HomePage() {
     setGoals(data || []);
   }
 
+  async function loadTasks(id: string) {
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, goal_id, title, description, status")
+      .eq("user_id", id)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setTasks(data || []);
+  }
+
   async function checkUser() {
     const {
       data: { user },
@@ -48,6 +77,7 @@ export default function HomePage() {
     if (user) {
       setUserId(user.id);
       await loadGoals(user.id);
+      await loadTasks(user.id);
     }
   }
 
@@ -85,7 +115,9 @@ export default function HomePage() {
       } else if (data.user) {
         setUserId(data.user.id);
         setMessage("You're signed in! 🎉");
+
         await loadGoals(data.user.id);
+        await loadTasks(data.user.id);
       }
     }
 
@@ -128,6 +160,46 @@ export default function HomePage() {
     }
 
     setGoalLoading(false);
+  }
+
+  async function handleCreateTask(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (!userId || !selectedGoalId) {
+      setMessage("Please choose a goal first.");
+      return;
+    }
+
+    if (!taskTitle.trim()) {
+      setMessage("Please enter a task.");
+      return;
+    }
+
+    setTaskLoading(true);
+    setMessage("");
+
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert({
+        user_id: userId,
+        goal_id: selectedGoalId,
+        title: taskTitle.trim(),
+        description: taskDescription.trim() || null,
+      })
+      .select("id, goal_id, title, description, status")
+      .single();
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setTasks((current) => [...current, data]);
+      setTaskTitle("");
+      setTaskDescription("");
+      setSelectedGoalId(null);
+      setMessage("Small step saved! ✅");
+    }
+
+    setTaskLoading(false);
   }
 
   if (userId) {
@@ -268,25 +340,219 @@ export default function HomePage() {
               <div style={{ marginTop: "35px" }}>
                 <h2>Your goals</h2>
 
-                {goals.map((goal) => (
-                  <div
-                    key={goal.id}
+                {goals.map((goal) => {
+                  const goalTasks = tasks.filter(
+                    (task) => task.goal_id === goal.id
+                  );
+
+                  return (
+                    <div
+                      key={goal.id}
+                      style={{
+                        padding: "20px",
+                        marginTop: "16px",
+                        border: "1px solid #eee",
+                        borderRadius: "12px",
+                      }}
+                    >
+                      <strong style={{ fontSize: "18px" }}>
+                        {goal.title}
+                      </strong>
+
+                      {goal.description && (
+                        <p style={{ color: "#666" }}>{goal.description}</p>
+                      )}
+
+                      <div style={{ marginTop: "20px" }}>
+                        <h3 style={{ marginBottom: "10px" }}>
+                          Small steps
+                        </h3>
+
+                        {goalTasks.length === 0 ? (
+                          <p style={{ color: "#888" }}>
+                            No small steps yet.
+                          </p>
+                        ) : (
+                          goalTasks.map((task) => (
+                            <div
+                              key={task.id}
+                              style={{
+                                padding: "10px 12px",
+                                marginTop: "8px",
+                                background: "#f8f7f4",
+                                borderRadius: "8px",
+                              }}
+                            >
+                              ☐ {task.title}
+
+                              {task.description && (
+                                <div
+                                  style={{
+                                    color: "#777",
+                                    fontSize: "14px",
+                                    marginTop: "4px",
+                                    marginLeft: "20px",
+                                  }}
+                                >
+                                  {task.description}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedGoalId(goal.id);
+                            setMessage("");
+                            window.scrollTo({
+                              top: document.body.scrollHeight,
+                              behavior: "smooth",
+                            });
+                          }}
+                          style={{
+                            marginTop: "14px",
+                            background: "none",
+                            border: "none",
+                            color: "#555",
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                          }}
+                        >
+                          + Add a small step
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {goals.length > 0 && (
+              <div
+                style={{
+                  marginTop: "35px",
+                  paddingTop: "25px",
+                  borderTop: "1px solid #eee",
+                }}
+              >
+                <h2>Add a small step</h2>
+
+                <p style={{ color: "#666" }}>
+                  Break a goal into something small and manageable.
+                </p>
+
+                <form onSubmit={handleCreateTask}>
+                  <label
+                    htmlFor="taskGoal"
                     style={{
-                      padding: "18px",
-                      marginTop: "12px",
-                      border: "1px solid #eee",
-                      borderRadius: "12px",
+                      display: "block",
+                      marginBottom: "8px",
+                      marginTop: "18px",
                     }}
                   >
-                    <strong>{goal.title}</strong>
+                    Goal
+                  </label>
 
-                    {goal.description && (
-                      <p style={{ color: "#666", marginBottom: 0 }}>
-                        {goal.description}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                  <select
+                    id="taskGoal"
+                    value={selectedGoalId || ""}
+                    onChange={(e) =>
+                      setSelectedGoalId(e.target.value || null)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "13px",
+                      border: "1px solid #ddd",
+                      borderRadius: "10px",
+                      fontSize: "16px",
+                      boxSizing: "border-box",
+                      background: "white",
+                    }}
+                  >
+                    <option value="">Choose a goal</option>
+
+                    {goals.map((goal) => (
+                      <option key={goal.id} value={goal.id}>
+                        {goal.title}
+                      </option>
+                    ))}
+                  </select>
+
+                  <label
+                    htmlFor="taskTitle"
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      marginTop: "18px",
+                    }}
+                  >
+                    Small step
+                  </label>
+
+                  <input
+                    id="taskTitle"
+                    type="text"
+                    value={taskTitle}
+                    onChange={(e) => setTaskTitle(e.target.value)}
+                    placeholder="Example: Put on walking shoes"
+                    style={{
+                      width: "100%",
+                      padding: "13px",
+                      border: "1px solid #ddd",
+                      borderRadius: "10px",
+                      fontSize: "16px",
+                      boxSizing: "border-box",
+                    }}
+                  />
+
+                  <label
+                    htmlFor="taskDescription"
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      marginTop: "18px",
+                    }}
+                  >
+                    Details (optional)
+                  </label>
+
+                  <textarea
+                    id="taskDescription"
+                    value={taskDescription}
+                    onChange={(e) => setTaskDescription(e.target.value)}
+                    rows={3}
+                    placeholder="Anything that will help you complete it..."
+                    style={{
+                      width: "100%",
+                      padding: "13px",
+                      border: "1px solid #ddd",
+                      borderRadius: "10px",
+                      fontSize: "16px",
+                      boxSizing: "border-box",
+                      resize: "vertical",
+                    }}
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={taskLoading}
+                    style={{
+                      width: "100%",
+                      padding: "14px",
+                      marginTop: "20px",
+                      background: "#171717",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "10px",
+                      fontSize: "16px",
+                      cursor: taskLoading ? "default" : "pointer",
+                    }}
+                  >
+                    {taskLoading ? "Saving..." : "Save small step"}
+                  </button>
+                </form>
               </div>
             )}
           </div>
