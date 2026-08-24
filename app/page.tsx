@@ -274,7 +274,7 @@ export default function HomePage() {
     border: "none",
     borderTop: "1px solid #eee",
     margin: "28px 0",
-  }}
+   }}
 />
 
 <div
@@ -285,8 +285,77 @@ export default function HomePage() {
     marginBottom: "30px",
   }}
 >
-  {/* Today's focus code goes here */}
+  <h2 style={{ marginTop: 0 }}>Today's focus</h2>
+
+  {tasks.length === 0 ? (
+    <p style={{ color: "#666", marginBottom: 0 }}>
+      Choose one small step to get started.
+    </p>
+  ) : (
+    (() => {
+      const nextTask =
+        tasks.find((task) => task.status !== "completed") || tasks[0];
+
+      const taskGoal = goals.find(
+        (goal) => goal.id === nextTask.goal_id
+      );
+
+      const isCompleted = nextTask.status === "completed";
+
+      return (
+        <div>
+          <p
+            style={{
+              fontSize: "18px",
+              fontWeight: "bold",
+              marginBottom: "8px",
+            }}
+          >
+            {isCompleted ? "☑" : "☐"} {nextTask.title}
+          </p>
+
+          {taskGoal && (
+            <p
+              style={{
+                color: "#666",
+                marginTop: 0,
+                marginBottom: "8px",
+              }}
+            >
+              Goal: {taskGoal.title}
+            </p>
+          )}
+
+          {nextTask.description && (
+            <p
+              style={{
+                color: "#777",
+                marginTop: "8px",
+                marginBottom: 0,
+              }}
+            >
+              {nextTask.description}
+            </p>
+          )}
+
+          {isCompleted && (
+            <p
+              style={{
+                color: "#555",
+                fontWeight: "bold",
+                marginBottom: 0,
+              }}
+            >
+              You did it! 🎉
+            </p>
+          )}
+        </div>
+      );
+    })()
+  )}
 </div>
+
+<h2>What would you like to work on?</h2>
 
 <h2>What would you like to work on?</h2>
 
