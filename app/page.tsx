@@ -396,13 +396,75 @@ export default function HomePage() {
                       </strong>
 
                       {goal.description && (
-                        <p style={{ color: "#666" }}>{goal.description}</p>
-                      )}
+  <p style={{ color: "#666" }}>{goal.description}</p>
+)}
 
-                      <div style={{ marginTop: "20px" }}>
-                        <h3 style={{ marginBottom: "10px" }}>
-                          Small steps
-                        </h3>
+<div style={{ marginTop: "20px" }}>
+  {(() => {
+    const completedTasks = goalTasks.filter(
+      (task) => task.status === "completed"
+    ).length;
+
+    const totalTasks = goalTasks.length;
+
+    const progress =
+      totalTasks === 0
+        ? 0
+        : Math.round((completedTasks / totalTasks) * 100);
+
+    return (
+      <div style={{ marginBottom: "24px" }}>
+        <h3 style={{ marginBottom: "10px" }}>
+          Progress
+        </h3>
+
+        <p
+          style={{
+            color: "#666",
+            marginTop: 0,
+            marginBottom: "10px",
+          }}
+        >
+          {completedTasks} of {totalTasks} small{" "}
+          {totalTasks === 1 ? "step" : "steps"} completed
+        </p>
+
+        <div
+          style={{
+            width: "100%",
+            height: "10px",
+            background: "#eee",
+            borderRadius: "10px",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${progress}%`,
+              height: "100%",
+              background: "#171717",
+              borderRadius: "10px",
+              transition: "width 0.3s ease",
+            }}
+          />
+        </div>
+
+        <p
+          style={{
+            fontSize: "14px",
+            color: "#777",
+            marginTop: "8px",
+          }}
+        >
+          {progress}% complete
+        </p>
+      </div>
+    );
+  })()}
+
+  <h3 style={{ marginBottom: "10px" }}>
+    Small steps
+  </h3>
 
                         {goalTasks.length === 0 ? (
                           <p style={{ color: "#888" }}>
