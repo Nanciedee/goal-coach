@@ -619,16 +619,41 @@ const [showReflection, setShowReflection] = useState(false);
     </button>
 
     {task.description && (
-      <div
-                                  style={{
-                                    color: "#777",
-                                    fontSize: "14px",
-                                    marginTop: "4px",
-                                    marginLeft: "20px",
-                                  }}
-                                >
-                                  {task.description}
-                                </div>
+  <div
+    style={{
+      color: "#777",
+      fontSize: "14px",
+      marginTop: "4px",
+      marginLeft: "20px",
+    }}
+  >
+    {task.description}
+  </div>
+)}
+
+{task.status === "completed" && (
+  <button
+    type="button"
+    onClick={() => {
+      setShowReflection(true);
+      setReflectionText("");
+      setReflectionMood("");
+      setMessage("");
+    }}
+    style={{
+      marginTop: "10px",
+      marginLeft: "20px",
+      background: "none",
+      border: "none",
+      color: "#555",
+      cursor: "pointer",
+      textDecoration: "underline",
+    }}
+  >
+    Reflect on this
+  </button>
+)}
+</div>
                               )}
                             </div>
                           ))
