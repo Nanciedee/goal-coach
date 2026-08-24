@@ -243,6 +243,41 @@ const [showReflection, setShowReflection] = useState(false);
     );
   }
 
+  async function handleSaveReflection(task: Task) {
+    if (!userId) {
+      setMessage("Please sign in first.");
+      return;
+    }
+
+    if (!reflectionText.trim()) {
+      setMessage("Please write a short reflection.");
+      return;
+    }
+
+    setReflectionLoading(true);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("reflections")
+      .insert({
+        user_id: userId,
+        task_id: task.id,
+        content: reflectionText.trim(),
+        mood: reflectionMood || null,
+      });
+
+    if (error) {
+      setMessage(error.message);
+    } else {
+      setReflectionText("");
+      setReflectionMood("");
+      setShowReflection(false);
+      setMessage("Reflection saved! 💭");
+    }
+
+    setReflectionLoading(false);
+  }
+
   if (userId) {
     return (
       <main
