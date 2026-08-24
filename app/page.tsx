@@ -270,18 +270,30 @@ export default function HomePage() {
             </p>
 
             <hr
-              style={{
-                border: "none",
-                borderTop: "1px solid #eee",
-                margin: "28px 0",
-              }}
-            />
+  style={{
+    border: "none",
+    borderTop: "1px solid #eee",
+    margin: "28px 0",
+  }}
+/>
 
-            <h2>What would you like to work on?</h2>
+<div
+  style={{
+    background: "#f8f7f4",
+    padding: "20px",
+    borderRadius: "14px",
+    marginBottom: "30px",
+  }}
+>
+  {/* Today's focus code goes here */}
+</div>
 
-            <p style={{ color: "#666" }}>
-              Start with one goal. You can always add another later.
-            </p>
+<h2>What would you like to work on?</h2>
+
+<p style={{ color: "#666" }}>
+  Start with one goal. You can always add another later.
+</p>
+
 
             <form onSubmit={handleCreateGoal}>
               <label
