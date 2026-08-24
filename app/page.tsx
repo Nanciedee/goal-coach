@@ -357,8 +357,6 @@ export default function HomePage() {
 
 <h2>What would you like to work on?</h2>
 
-<h2>What would you like to work on?</h2>
-
 <p style={{ color: "#666" }}>
   Start with one goal. You can always add another later.
 </p>
