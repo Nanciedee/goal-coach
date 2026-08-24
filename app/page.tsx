@@ -34,10 +34,15 @@ export default function HomePage() {
   const [goals, setGoals] = useState<Goal[]>([]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskDescription, setTaskDescription] = useState("");
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const [taskLoading, setTaskLoading] = useState(false);
+const [taskTitle, setTaskTitle] = useState("");
+const [taskDescription, setTaskDescription] = useState("");
+const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
+const [taskLoading, setTaskLoading] = useState(false);
+
+const [reflectionText, setReflectionText] = useState("");
+const [reflectionMood, setReflectionMood] = useState("");
+const [reflectionLoading, setReflectionLoading] = useState(false);
+const [showReflection, setShowReflection] = useState(false);
 
   async function loadGoals(id: string) {
     const { data, error } = await supabase
