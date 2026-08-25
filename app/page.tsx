@@ -246,11 +246,13 @@ export default function HomePage() {
     );
   }
 
-  async function handleSaveReflection(task: Task) {
-    if (!userId) {
-      setMessage("Please sign in first.");
-      return;
-    }
+  aasync function handleSaveReflection(task: Task) {
+  console.log("🔥 SAVE REFLECTION CLICKED", task);
+
+  if (!userId) {
+    setMessage("Please sign in first.");
+    return;
+  }
 
     if (!reflectionText.trim()) {
       setMessage("Please write a short reflection.");
