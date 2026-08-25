@@ -103,19 +103,35 @@ export default function FocusPage() {
       .eq("id", task.id)
       .eq("user_id", user.id);
 
-    if (error) {
+        if (error) {
       setMessage(error.message);
+      setCompleting(false);
+      return;
+    }
+
+    const { error: xpError } = await supabase
+      .from("xp")
+      .insert({
+        user_id: user.id,
+        amount: 10,
+        reason: "task_completed",
+        task_id: task.id,
+      });
+
+    if (xpError) {
+      setMessage(`Task completed, but XP could not be saved: ${xpError.message}`);
       setCompleting(false);
       return;
     }
 
     setTasks([]);
     setCompletedTask(task);
-    setMessage("Bravo! 🎉");
+    setMessage("");
     setCompleting(false);
   }
 
   async function handleSaveReflection() {
+
     if (!completedTask) {
       return;
     }
