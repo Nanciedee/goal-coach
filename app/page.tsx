@@ -773,6 +773,7 @@ export default function HomePage() {
     (reflection) =>
       reflection.task_id === task.id
   )
+  .slice(0, 3)
   .map((reflection) => (
     <div
       key={reflection.id}
