@@ -72,19 +72,32 @@ export default function HomePage() {
   }
 
   async function loadTasks(id: string) {
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("id, goal_id, title, description, status")
-      .eq("user_id", id)
-      .order("created_at", { ascending: true });
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, goal_id, title, description, status")
+    .eq("user_id", id)
+    .order("created_at", { ascending: true });
 
-    if (error) {
-      setMessage(error.message);
-      return;
-    }
-
-    setTasks(data || []);
+  if (error) {
+    setMessage(error.message);
+    return;
   }
+
+  setTasks(data || []);
+
+  const { data: reflectionData, error: reflectionError } = await supabase
+    .from("reflections")
+    .select("id, user_id, task_id, content, mood, created_at")
+    .eq("user_id", id)
+    .order("created_at", { ascending: false });
+
+  if (reflectionError) {
+    console.error("Error loading reflections:", reflectionError);
+    return;
+  }
+
+  setReflections(reflectionData || []);
+}
 
   async function checkUser() {
     const {
