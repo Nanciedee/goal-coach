@@ -42,6 +42,7 @@ export default function HomePage() {
   const [goals, setGoals] = useState<Goal[]>([]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [reflections, setReflections] = useState<Reflection[]>([]);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
