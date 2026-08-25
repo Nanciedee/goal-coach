@@ -118,13 +118,59 @@ export default function FocusPage() {
       return;
     }
 
-    setCompletedTask(task);
     setTasks([]);
+    setCompletedTask(task);
     setMessage("You did it! 🎉");
     setCompleting(false);
   }
 
-  const currentTask = tasks.length > 0 ? tasks[0] : null;
+  async function handleSaveReflection() {
+    if (!completedTask) {
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMessage("Please sign in first.");
+      return;
+    }
+
+    if (!reflectionText.trim()) {
+      setMessage("Please write a short reflection.");
+      return;
+    }
+
+    setReflectionLoading(true);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("reflections")
+      .insert({
+        user_id: user.id,
+        task_id: completedTask.id,
+        content: reflectionText.trim(),
+        mood: reflectionMood || null,
+      });
+
+    if (error) {
+      setMessage(`Could not save reflection: ${error.message}`);
+      setReflectionLoading(false);
+      return;
+    }
+
+    setReflectionText("");
+    setReflectionMood("");
+    setReflectionSaved(true);
+    setMessage("Reflection saved! 💭");
+
+    setReflectionLoading(false);
+  }
+
+  const currentTask =
+    tasks.length > 0 ? tasks[0] : null;
 
   const currentGoal = currentTask
     ? goals.find((goal) => goal.id === currentTask.goal_id)
