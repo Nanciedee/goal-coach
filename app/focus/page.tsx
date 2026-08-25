@@ -118,6 +118,7 @@ export default function FocusPage() {
       return;
     }
 
+    setCompletedTask(task);
     setTasks([]);
     setMessage("You did it! 🎉");
     setCompleting(false);
