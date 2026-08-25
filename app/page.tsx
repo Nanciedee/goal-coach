@@ -766,6 +766,62 @@ export default function HomePage() {
                                 </div>
                               )}
 
+                              {/* SAVED REFLECTIONS */}
+
+                              {reflections
+                                .filter(
+                                  (reflection) =>
+                                    reflection.task_id === task.id
+                                )
+                                .map((reflection) => (
+                                  <div
+                                    key={reflection.id}
+                                    style={{
+                                      marginTop: "12px",
+                                      marginLeft: "20px",
+                                      padding: "10px",
+                                      background: "#fff",
+                                      borderRadius: "8px",
+                                      border: "1px solid #eee",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#888",
+                                        marginBottom: "4px",
+                                      }}
+                                    >
+                                      Reflection
+                                    </div>
+
+                                    <div
+                                      style={{
+                                        fontSize: "14px",
+                                        color: "#444",
+                                      }}
+                                    >
+                                      {reflection.content}
+                                    </div>
+
+                                    {reflection.mood && (
+                                      <div
+                                        style={{
+                                          fontSize: "13px",
+                                          color: "#777",
+                                          marginTop: "6px",
+                                        }}
+                                      >
+                                        Mood: {reflection.mood}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                >
+                                  {task.description}
+                                </div>
+                              )}
+
                               {/* REFLECTION */}
 
                               {task.status === "completed" && (
