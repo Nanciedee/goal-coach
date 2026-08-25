@@ -11,15 +11,23 @@ type Task = {
   status: string;
 };
 
+type Goal = {
+  id: string;
+  title: string;
+};
+
 export default function FocusPage() {
   const supabase = createClient();
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [completing, setCompleting] = useState(false);
 
   async function loadFocusTask() {
     setLoading(true);
+    setMessage("");
 
     const {
       data: { user },
@@ -31,19 +39,35 @@ export default function FocusPage() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .select("id, goal_id, title, description, status")
+    const { data: goalData, error: goalError } = await supabase
+      .from("goals")
+      .select("id, title")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
-    if (error) {
-      setMessage(error.message);
+    if (goalError) {
+      setMessage(goalError.message);
       setLoading(false);
       return;
     }
 
-    setTasks(data || []);
+    setGoals(goalData || []);
+
+    const { data: taskData, error: taskError } = await supabase
+      .from("tasks")
+      .select("id, goal_id, title, description, status")
+      .eq("user_id", user.id)
+      .neq("status", "completed")
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    if (taskError) {
+      setMessage(taskError.message);
+      setLoading(false);
+      return;
+    }
+
+    setTasks(taskData || []);
     setLoading(false);
   }
 
@@ -52,32 +76,43 @@ export default function FocusPage() {
   }, []);
 
   async function handleComplete(task: Task) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMessage("Please sign in first.");
+      return;
+    }
+
+    setCompleting(true);
+    setMessage("");
+
     const { error } = await supabase
       .from("tasks")
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
       })
-      .eq("id", task.id);
+      .eq("id", task.id)
+      .eq("user_id", user.id);
 
     if (error) {
       setMessage(error.message);
+      setCompleting(false);
       return;
     }
 
-    setTasks((current) =>
-      current.map((item) =>
-        item.id === task.id
-          ? { ...item, status: "completed" }
-          : item
-      )
-    );
-
+    setTasks([]);
     setMessage("You did it! 🎉");
+    setCompleting(false);
   }
 
-  const currentTask =
-    tasks.find((task) => task.status !== "completed") || null;
+  const currentTask = tasks.length > 0 ? tasks[0] : null;
+
+  const currentGoal = currentTask
+    ? goals.find((goal) => goal.id === currentTask.goal_id)
+    : null;
 
   if (loading) {
     return (
@@ -120,11 +155,33 @@ export default function FocusPage() {
             boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
           }}
         >
+          {/* BACK TO GOALS */}
+
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/";
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              color: "#666",
+              cursor: "pointer",
+              fontSize: "14px",
+              marginBottom: "30px",
+              textDecoration: "underline",
+            }}
+          >
+            ← Back to Goal Coach
+          </button>
+
           <p
             style={{
               color: "#777",
               fontSize: "14px",
               marginBottom: "8px",
+              letterSpacing: "0.5px",
             }}
           >
             ONE-THING FOCUS
@@ -178,9 +235,48 @@ export default function FocusPage() {
 
               <h2>You're all caught up!</h2>
 
-              <p style={{ color: "#666" }}>
-                There are no unfinished small steps right now.
+              <p
+                style={{
+                  color: "#666",
+                  lineHeight: 1.5,
+                }}
+              >
+                You don't have any unfinished small steps right now.
               </p>
+
+              {message && (
+                <p
+                  style={{
+                    marginTop: "20px",
+                    padding: "12px",
+                    background: "#f4f4f4",
+                    borderRadius: "10px",
+                    color: "#444",
+                  }}
+                >
+                  {message}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  marginTop: "20px",
+                  background: "#171717",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                }}
+              >
+                Back to Goal Coach
+              </button>
             </div>
           ) : (
             <div>
@@ -204,49 +300,93 @@ export default function FocusPage() {
                 {currentTask.title}
               </h2>
 
-              {currentTask.description && (
+              {currentGoal && (
                 <p
                   style={{
-                    color: "#666",
-                    lineHeight: 1.6,
+                    color: "#777",
+                    fontSize: "14px",
+                    marginBottom: "18px",
+                  }}
+                >
+                  Goal: {currentGoal.title}
+                </p>
+              )}
+
+              {currentTask.description && (
+                <div
+                  style={{
+                    background: "#f8f7f4",
+                    padding: "18px",
+                    borderRadius: "12px",
                     marginBottom: "25px",
                   }}
                 >
-                  {currentTask.description}
-                </p>
+                  <p
+                    style={{
+                      color: "#666",
+                      lineHeight: 1.6,
+                      margin: 0,
+                    }}
+                  >
+                    {currentTask.description}
+                  </p>
+                </div>
               )}
 
               <button
                 type="button"
+                disabled={completing}
                 onClick={() => handleComplete(currentTask)}
                 style={{
                   width: "100%",
                   padding: "15px",
-                  background: "#171717",
+                  background: completing ? "#555" : "#171717",
                   color: "white",
                   border: "none",
                   borderRadius: "10px",
                   fontSize: "17px",
-                  cursor: "pointer",
+                  cursor: completing ? "default" : "pointer",
                 }}
               >
-                Mark as complete ✓
+                {completing
+                  ? "Saving..."
+                  : "I'm done ✓"}
+              </button>
+
+              {message && (
+                <div
+                  style={{
+                    marginTop: "20px",
+                    padding: "14px",
+                    background: "#f4f4f4",
+                    borderRadius: "10px",
+                    color: "#444",
+                    textAlign: "center",
+                  }}
+                >
+                  {message}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "12px",
+                  background: "none",
+                  border: "none",
+                  color: "#666",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Back to my goals
               </button>
             </div>
-          )}
-
-          {message && (
-            <p
-              style={{
-                marginTop: "20px",
-                padding: "12px",
-                background: "#f4f4f4",
-                borderRadius: "10px",
-                color: "#444",
-              }}
-            >
-              {message}
-            </p>
           )}
         </div>
       </div>
