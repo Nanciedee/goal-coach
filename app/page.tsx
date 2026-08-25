@@ -246,7 +246,7 @@ export default function HomePage() {
     );
   }
 
-  aasync function handleSaveReflection(task: Task) {
+  async function handleSaveReflection(task: Task) {
   console.log("🔥 SAVE REFLECTION CLICKED", task);
 
   if (!userId) {
