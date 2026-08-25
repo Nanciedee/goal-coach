@@ -16,6 +16,15 @@ type Goal = {
   title: string;
 };
 
+type Reflection = {
+  id: string;
+  user_id: string;
+  task_id: string | null;
+  content: string | null;
+  mood: string | null;
+  created_at: string;
+};
+
 export default function FocusPage() {
   const supabase = createClient();
 
