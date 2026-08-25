@@ -787,28 +787,48 @@ export default function HomePage() {
       }}
     >
       <div
-  style={{
-    fontSize: "13px",
-    color: "#777",
-    marginTop: "6px",
-  }}
->
-  {reflection.mood === "great"
-    ? "Great 😊"
-    : reflection.mood === "good"
-    ? "Good 🙂"
-    : reflection.mood === "okay"
-    ? "Okay 😐"
-    : reflection.mood === "difficult"
-    ? "Difficult 😕"
-    : reflection.mood}
-  {" · "}
-  {new Date(reflection.created_at).toLocaleString([], {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })}
-</div>
-      )}
+        style={{
+          fontSize: "13px",
+          color: "#888",
+          marginBottom: "4px",
+        }}
+      >
+        Reflection history 💭
+      </div>
+
+      <div
+        style={{
+          fontSize: "14px",
+          color: "#444",
+        }}
+      >
+        • {reflection.content}
+      </div>
+
+      <div
+        style={{
+          fontSize: "13px",
+          color: "#777",
+          marginTop: "6px",
+        }}
+      >
+        {reflection.mood === "great"
+          ? "Great 😊"
+          : reflection.mood === "good"
+          ? "Good 🙂"
+          : reflection.mood === "okay"
+          ? "Okay 😐"
+          : reflection.mood === "difficult"
+          ? "Difficult 😕"
+          : reflection.mood}
+        {" · "}
+        {new Date(
+          reflection.created_at
+        ).toLocaleString([], {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })}
+      </div>
     </div>
   ))}
 
