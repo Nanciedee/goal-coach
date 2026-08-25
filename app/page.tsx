@@ -373,6 +373,34 @@ export default function HomePage() {
               }}
             />
 
+            {/* ONE-THING FOCUS BUTTON */}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginBottom: "20px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/focus";
+                }}
+                style={{
+                  background: "#171717",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "12px 18px",
+                  fontSize: "15px",
+                  cursor: "pointer",
+                }}
+              >
+                🎯 One-Thing Focus
+              </button>
+            </div>
+
             {/* TODAY'S FOCUS */}
 
             <div
