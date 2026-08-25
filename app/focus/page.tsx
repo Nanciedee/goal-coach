@@ -34,6 +34,12 @@ export default function FocusPage() {
   const [message, setMessage] = useState("");
   const [completing, setCompleting] = useState(false);
 
+  const [completedTask, setCompletedTask] = useState<Task | null>(null);
+  const [reflectionText, setReflectionText] = useState("");
+  const [reflectionMood, setReflectionMood] = useState("");
+  const [reflectionLoading, setReflectionLoading] = useState(false);
+  const [reflectionSaved, setReflectionSaved] = useState(false);
+
   async function loadFocusTask() {
     setLoading(true);
     setMessage("");
