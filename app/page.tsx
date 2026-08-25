@@ -766,13 +766,22 @@ export default function HomePage() {
   </div>
 )}
 
+D'accord. On va faire beaucoup plus simple et surtout une seule modification à la fois. Ne change rien d'autre pour l'instant.
+
+Le problème vient probablement du fait que le morceau de JSX autour de SAVED REFLECTIONS n'est pas correctement fermé.
+
+Étape 1 — supprime uniquement le bloc actuel
+Dans page.tsx, cherche :
+
+{/* SAVED REFLECTIONS */}
+
+Supprime tout le bloc, jusqu'au ))} qui termine la liste des réflexions.
+
+Étape 2 — colle exactement ceci à sa place
 {/* SAVED REFLECTIONS */}
 
 {reflections
-  .filter(
-    (reflection) =>
-      reflection.task_id === task.id
-  )
+  .filter((reflection) => reflection.task_id === task.id)
   .slice(0, 3)
   .map((reflection) => (
     <div
@@ -821,10 +830,10 @@ export default function HomePage() {
           : reflection.mood === "difficult"
           ? "Difficult 😕"
           : reflection.mood}
+
         {" · "}
-        {new Date(
-          reflection.created_at
-        ).toLocaleString([], {
+
+        {new Date(reflection.created_at).toLocaleString([], {
           dateStyle: "medium",
           timeStyle: "short",
         })}
