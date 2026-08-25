@@ -286,25 +286,160 @@ export default function FocusPage() {
                 padding: "30px 10px",
               }}
             >
-              <div
-                style={{
-                  fontSize: "42px",
-                  marginBottom: "15px",
-                }}
-              >
-                🎉
-              </div>
+              {completedTask && !reflectionSaved ? (
+                <div style={{ textAlign: "left" }}>
+                  <div
+                    style={{
+                      fontSize: "42px",
+                      textAlign: "center",
+                      marginBottom: "15px",
+                    }}
+                  >
+                    🎉
+                  </div>
 
-              <h2>You're all caught up!</h2>
+                  <h2 style={{ textAlign: "center" }}>
+                    You did it!
+                  </h2>
 
-              <p
-                style={{
-                  color: "#666",
-                  lineHeight: 1.5,
-                }}
-              >
-                You don't have any unfinished small steps right now.
-              </p>
+                  <p
+                    style={{
+                      color: "#666",
+                      textAlign: "center",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Take a moment to notice how that went.
+                  </p>
+
+                  <label
+                    style={{
+                      display: "block",
+                      marginTop: "25px",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    How did it go?
+                  </label>
+
+                  <textarea
+                    value={reflectionText}
+                    onChange={(e) =>
+                      setReflectionText(e.target.value)
+                    }
+                    rows={4}
+                    placeholder="What did you notice? How did it feel?"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #ddd",
+                      borderRadius: "10px",
+                      fontSize: "15px",
+                      boxSizing: "border-box",
+                      resize: "vertical",
+                    }}
+                  />
+
+                  <label
+                    style={{
+                      display: "block",
+                      marginTop: "15px",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    How are you feeling?
+                  </label>
+
+                  <select
+                    value={reflectionMood}
+                    onChange={(e) =>
+                      setReflectionMood(e.target.value)
+                    }
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "1px solid #ddd",
+                      borderRadius: "10px",
+                      fontSize: "15px",
+                      background: "white",
+                    }}
+                  >
+                    <option value="">
+                      Choose one
+                    </option>
+                    <option value="great">
+                      Great 😊
+                    </option>
+                    <option value="good">
+                      Good 🙂
+                    </option>
+                    <option value="okay">
+                      Okay 😐
+                    </option>
+                    <option value="difficult">
+                      Difficult 😕
+                    </option>
+                  </select>
+
+                  <button
+                    type="button"
+                    disabled={reflectionLoading}
+                    onClick={handleSaveReflection}
+                    style={{
+                      width: "100%",
+                      padding: "14px",
+                      marginTop: "18px",
+                      background: "#171717",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "10px",
+                      fontSize: "16px",
+                      cursor: reflectionLoading
+                        ? "default"
+                        : "pointer",
+                    }}
+                  >
+                    {reflectionLoading
+                      ? "Saving..."
+                      : "Save reflection"}
+                  </button>
+
+                  {message && (
+                    <p
+                      style={{
+                        marginTop: "15px",
+                        padding: "12px",
+                        background: "#f4f4f4",
+                        borderRadius: "10px",
+                        color: "#444",
+                        textAlign: "center",
+                      }}
+                    >
+                      {message}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      fontSize: "42px",
+                      marginBottom: "15px",
+                    }}
+                  >
+                    🎉
+                  </div>
+
+                  <h2>You're all caught up!</h2>
+
+                  <p
+                    style={{
+                      color: "#666",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    You don't have any unfinished small steps right now.
+                  </p>
 
               {message && (
                 <p
