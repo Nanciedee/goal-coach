@@ -789,41 +789,25 @@ export default function HomePage() {
       <div
   style={{
     fontSize: "13px",
-    color: "#888",
-    marginBottom: "4px",
+    color: "#777",
+    marginTop: "6px",
   }}
 >
-  Reflection history
+  {reflection.mood === "great"
+    ? "Great 😊"
+    : reflection.mood === "good"
+    ? "Good 🙂"
+    : reflection.mood === "okay"
+    ? "Okay 😐"
+    : reflection.mood === "difficult"
+    ? "Difficult 😕"
+    : reflection.mood}
+  {" · "}
+  {new Date(reflection.created_at).toLocaleString([], {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })}
 </div>
-
-      <div
-        style={{
-          fontSize: "14px",
-          color: "#444",
-        }}
-      >
-     {reflection.content}
-      </div>
-
-      {reflection.mood && (
-        <div
-          style={{
-            fontSize: "13px",
-            color: "#777",
-            marginTop: "6px",
-          }}
-        >
-          Mood:{" "}
-          {reflection.mood === "great"
-            ? "Great 😊"
-            : reflection.mood === "good"
-            ? "Good 🙂"
-            : reflection.mood === "okay"
-            ? "Okay 😐"
-            : reflection.mood === "difficult"
-            ? "Difficult 😕"
-            : reflection.mood}
-        </div>
       )}
     </div>
   ))}
