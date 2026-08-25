@@ -248,41 +248,70 @@ export default function HomePage() {
 
   async function handleSaveReflection(task: Task) {
   console.log("🔥 SAVE REFLECTION CLICKED", task);
+  console.log("👤 userId:", userId);
+  console.log("📝 reflectionText:", reflectionText);
+  console.log("🙂 reflectionMood:", reflectionMood);
+  console.log("🆔 taskId:", task.id);
 
   if (!userId) {
+    console.log("❌ NO USER ID");
     setMessage("Please sign in first.");
     return;
   }
 
-    if (!reflectionText.trim()) {
-      setMessage("Please write a short reflection.");
-      return;
-    }
-
-    setReflectionLoading(true);
-    setMessage("");
-
-    const { error } = await supabase
-      .from("reflections")
-      .insert({
-        user_id: userId,
-        task_id: task.id,
-        content: reflectionText.trim(),
-        mood: reflectionMood || null,
-      });
-
-    if (error) {
-      setMessage(error.message);
-    } else {
-      setReflectionText("");
-      setReflectionMood("");
-      setShowReflection(false);
-      setReflectionTaskId(null);
-      setMessage("Reflection saved! 💭");
-    }
-
-    setReflectionLoading(false);
+  if (!reflectionText.trim()) {
+    console.log("❌ NO REFLECTION TEXT");
+    setMessage("Please write a short reflection.");
+    return;
   }
+
+  setReflectionLoading(true);
+  setMessage("");
+
+  console.log("🚀 About to call Supabase");
+
+  const {
+    data: authData,
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  console.log("🔐 Auth user:", authData.user?.id);
+  console.log("🔐 Auth error:", authError);
+
+  const insertData = {
+    user_id: userId,
+    task_id: task.id,
+    content: reflectionText.trim(),
+    mood: reflectionMood || null,
+  };
+
+  console.log("📦 Inserting:", insertData);
+
+  const { data, error } = await supabase
+    .from("reflections")
+    .insert(insertData)
+    .select()
+    .single();
+
+  console.log("📥 Supabase data:", data);
+  console.log("📥 Supabase error:", error);
+
+  if (error) {
+    setMessage(`Could not save reflection: ${error.message}`);
+    setReflectionLoading(false);
+    return;
+  }
+
+  console.log("✅ REFLECTION SAVED!");
+
+  setReflectionText("");
+  setReflectionMood("");
+  setShowReflection(false);
+  setReflectionTaskId(null);
+  setMessage("Reflection saved! 💭");
+
+  setReflectionLoading(false);
+}
 
   if (userId) {
     return (
