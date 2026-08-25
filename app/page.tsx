@@ -786,14 +786,14 @@ export default function HomePage() {
       }}
     >
       <div
-        style={{
-          fontSize: "13px",
-          color: "#888",
-          marginBottom: "4px",
-        }}
-      >
-        Reflection
-      </div>
+  style={{
+    fontSize: "13px",
+    color: "#888",
+    marginBottom: "4px",
+  }}
+>
+  Reflection history
+</div>
 
       <div
         style={{
