@@ -24,6 +24,7 @@ type Reflection = {
   task_id: string | null;
   content: string | null;
   mood: string | null;
+  created_at: string;
 };
 
 export default function HomePage() {
@@ -72,32 +73,35 @@ export default function HomePage() {
   }
 
   async function loadTasks(id: string) {
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("id, goal_id, title, description, status")
-    .eq("user_id", id)
-    .order("created_at", { ascending: true });
+    const { data, error } = await supabase
+      .from("tasks")
+      .select("id, goal_id, title, description, status")
+      .eq("user_id", id)
+      .order("created_at", { ascending: true });
 
-  if (error) {
-    setMessage(error.message);
-    return;
+    if (error) {
+      setMessage(error.message);
+      return;
+    }
+
+    setTasks(data || []);
+
+    const {
+      data: reflectionData,
+      error: reflectionError,
+    } = await supabase
+      .from("reflections")
+      .select("id, user_id, task_id, content, mood, created_at")
+      .eq("user_id", id)
+      .order("created_at", { ascending: false });
+
+    if (reflectionError) {
+      console.error("Error loading reflections:", reflectionError);
+      return;
+    }
+
+    setReflections(reflectionData || []);
   }
-
-  setTasks(data || []);
-
-  const { data: reflectionData, error: reflectionError } = await supabase
-    .from("reflections")
-    .select("id, user_id, task_id, content, mood, created_at")
-    .eq("user_id", id)
-    .order("created_at", { ascending: false });
-
-  if (reflectionError) {
-    console.error("Error loading reflections:", reflectionError);
-    return;
-  }
-
-  setReflections(reflectionData || []);
-}
 
   async function checkUser() {
     const {
@@ -269,71 +273,64 @@ export default function HomePage() {
   }
 
   async function handleSaveReflection(task: Task) {
-  console.log("🔥 SAVE REFLECTION CLICKED", task);
-  console.log("👤 userId:", userId);
-  console.log("📝 reflectionText:", reflectionText);
-  console.log("🙂 reflectionMood:", reflectionMood);
-  console.log("🆔 taskId:", task.id);
+    console.log("🔥 SAVE REFLECTION CLICKED", task);
+    console.log("👤 userId:", userId);
+    console.log("📝 reflectionText:", reflectionText);
+    console.log("🙂 reflectionMood:", reflectionMood);
+    console.log("🆔 taskId:", task.id);
 
-  if (!userId) {
-    console.log("❌ NO USER ID");
-    setMessage("Please sign in first.");
-    return;
-  }
+    if (!userId) {
+      console.log("❌ NO USER ID");
+      setMessage("Please sign in first.");
+      return;
+    }
 
-  if (!reflectionText.trim()) {
-    console.log("❌ NO REFLECTION TEXT");
-    setMessage("Please write a short reflection.");
-    return;
-  }
+    if (!reflectionText.trim()) {
+      console.log("❌ NO REFLECTION TEXT");
+      setMessage("Please write a short reflection.");
+      return;
+    }
 
-  setReflectionLoading(true);
-  setMessage("");
+    setReflectionLoading(true);
+    setMessage("");
 
-  console.log("🚀 About to call Supabase");
+    const insertData = {
+      user_id: userId,
+      task_id: task.id,
+      content: reflectionText.trim(),
+      mood: reflectionMood || null,
+    };
 
-  const {
-    data: authData,
-    error: authError,
-  } = await supabase.auth.getUser();
+    console.log("📦 Inserting:", insertData);
 
-  console.log("🔐 Auth user:", authData.user?.id);
-  console.log("🔐 Auth error:", authError);
+    const { data, error } = await supabase
+      .from("reflections")
+      .insert(insertData)
+      .select("id, user_id, task_id, content, mood, created_at")
+      .single();
 
-  const insertData = {
-    user_id: userId,
-    task_id: task.id,
-    content: reflectionText.trim(),
-    mood: reflectionMood || null,
-  };
+    console.log("📥 Supabase data:", data);
+    console.log("📥 Supabase error:", error);
 
-  console.log("📦 Inserting:", insertData);
+    if (error) {
+      setMessage(`Could not save reflection: ${error.message}`);
+      setReflectionLoading(false);
+      return;
+    }
 
-  const { data, error } = await supabase
-    .from("reflections")
-    .insert(insertData)
-    .select()
-    .single();
+    console.log("✅ REFLECTION SAVED!");
 
-  console.log("📥 Supabase data:", data);
-  console.log("📥 Supabase error:", error);
+    // Add the new reflection immediately to the screen
+    setReflections((current) => [data, ...current]);
 
-  if (error) {
-    setMessage(`Could not save reflection: ${error.message}`);
+    setReflectionText("");
+    setReflectionMood("");
+    setShowReflection(false);
+    setReflectionTaskId(null);
+    setMessage("Reflection saved! 💭");
+
     setReflectionLoading(false);
-    return;
   }
-
-  console.log("✅ REFLECTION SAVED!");
-
-  setReflectionText("");
-  setReflectionMood("");
-  setShowReflection(false);
-  setReflectionTaskId(null);
-  setMessage("Reflection saved! 💭");
-
-  setReflectionLoading(false);
-}
 
   if (userId) {
     return (
@@ -708,331 +705,358 @@ export default function HomePage() {
                             No small steps yet.
                           </p>
                         ) : (
-                          goalTasks.map((task) => (
-                            <div
-                              key={task.id}
-                              style={{
-                                padding: "10px 12px",
-                                marginTop: "8px",
-                                background: "#f8f7f4",
-                                borderRadius: "8px",
-                              }}
-                            >
-                              {/* TASK BUTTON */}
+                          goalTasks.map((task) => {
+                            const taskReflections =
+                              reflections
+                                .filter(
+                                  (reflection) =>
+                                    reflection.task_id === task.id
+                                )
+                                .slice(0, 3);
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleToggleTask(task)
-                                }
+                            return (
+                              <div
+                                key={task.id}
                                 style={{
-                                  background: "none",
-                                  border: "none",
-                                  padding: 0,
-                                  cursor: "pointer",
-                                  fontSize: "16px",
-                                  textAlign: "left",
-                                  color:
-                                    task.status ===
-                                    "completed"
-                                      ? "#777"
-                                      : "#171717",
-                                  textDecoration:
-                                    task.status ===
-                                    "completed"
-                                      ? "line-through"
-                                      : "none",
+                                  padding: "10px 12px",
+                                  marginTop: "8px",
+                                  background: "#f8f7f4",
+                                  borderRadius: "8px",
                                 }}
                               >
-                                {task.status ===
-                                "completed"
-                                  ? "☑"
-                                  : "☐"}{" "}
-                                {task.title}
-                              </button>
+                                {/* TASK BUTTON */}
 
-                              {/* TASK DESCRIPTION */}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleToggleTask(task)
+                                  }
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    padding: 0,
+                                    cursor: "pointer",
+                                    fontSize: "16px",
+                                    textAlign: "left",
+                                    color:
+                                      task.status ===
+                                      "completed"
+                                        ? "#777"
+                                        : "#171717",
+                                    textDecoration:
+                                      task.status ===
+                                      "completed"
+                                        ? "line-through"
+                                        : "none",
+                                  }}
+                                >
+                                  {task.status ===
+                                  "completed"
+                                    ? "☑"
+                                    : "☐"}{" "}
+                                  {task.title}
+                                </button>
 
-                              {task.description && (
-  <div
-    style={{
-      color: "#777",
-      fontSize: "14px",
-      marginTop: "4px",
-      marginLeft: "20px",
-    }}
-  >
-    {task.description}
-  </div>
-)}
+                                {/* TASK DESCRIPTION */}
 
-{/* SAVED REFLECTIONS */}
-
-{reflections
-  .filter((reflection) => reflection.task_id === task.id)
-  .slice(0, 3)
-  .map((reflection) => (
-    <div
-      key={reflection.id}
-      style={{
-        marginTop: "12px",
-        marginLeft: "20px",
-        padding: "10px",
-        background: "#fff",
-        borderRadius: "8px",
-        border: "1px solid #eee",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "13px",
-          color: "#888",
-          marginBottom: "4px",
-        }}
-      >
-        Reflection history 💭
-      </div>
-
-      <div
-        style={{
-          fontSize: "14px",
-          color: "#444",
-        }}
-      >
-        • {reflection.content}
-      </div>
-
-      <div
-        style={{
-          fontSize: "13px",
-          color: "#777",
-          marginTop: "6px",
-        }}
-      >
-        {reflection.mood === "great"
-          ? "Great 😊"
-          : reflection.mood === "good"
-          ? "Good 🙂"
-          : reflection.mood === "okay"
-          ? "Okay 😐"
-          : reflection.mood === "difficult"
-          ? "Difficult 😕"
-          : reflection.mood}
-        {" · "}
-        {new Date(reflection.created_at).toLocaleString([], {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })}
-      </div>
-    </div>
-  ))}
-      </div>
-    </div>
-  ))}
-
-{/* REFLECTION */}
-
-                              {task.status === "completed" && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setShowReflection(
-                                        true
-                                      );
-                                      setReflectionTaskId(
-                                        task.id
-                                      );
-                                      setReflectionText("");
-                                      setReflectionMood("");
-                                      setMessage("");
-                                    }}
+                                {task.description && (
+                                  <div
                                     style={{
-                                      marginTop: "10px",
+                                      color: "#777",
+                                      fontSize: "14px",
+                                      marginTop: "4px",
                                       marginLeft: "20px",
-                                      background: "none",
-                                      border: "none",
-                                      color: "#555",
-                                      cursor: "pointer",
-                                      textDecoration:
-                                        "underline",
                                     }}
                                   >
-                                    Reflect on this
-                                  </button>
+                                    {task.description}
+                                  </div>
+                                )}
 
-                                  {showReflection &&
-                                    reflectionTaskId ===
-                                      task.id && (
-                                      <div
-                                        style={{
-                                          marginTop: "15px",
-                                          marginLeft: "20px",
-                                          padding: "15px",
-                                          background:
-                                            "white",
-                                          borderRadius:
-                                            "10px",
-                                          border:
-                                            "1px solid #ddd",
-                                        }}
-                                      >
-                                        <h4
+                                {/* SAVED REFLECTIONS */}
+
+                                {taskReflections.length > 0 && (
+                                  <div
+                                    style={{
+                                      marginTop: "14px",
+                                      marginLeft: "20px",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontSize: "13px",
+                                        color: "#888",
+                                        marginBottom: "8px",
+                                      }}
+                                    >
+                                      Reflection history 💭
+                                    </div>
+
+                                    {taskReflections.map(
+                                      (reflection) => (
+                                        <div
+                                          key={reflection.id}
                                           style={{
-                                            marginTop: 0,
+                                            marginBottom: "10px",
+                                            padding: "10px",
+                                            background: "#fff",
+                                            borderRadius: "8px",
+                                            border:
+                                              "1px solid #eee",
                                           }}
                                         >
-                                          How did that go?
-                                        </h4>
+                                          <div
+                                            style={{
+                                              fontSize: "14px",
+                                              color: "#444",
+                                            }}
+                                          >
+                                            •{" "}
+                                            {reflection.content}
+                                          </div>
 
-                                        <textarea
-                                          value={
-                                            reflectionText
-                                          }
-                                          onChange={(e) =>
-                                            setReflectionText(
-                                              e.target.value
-                                            )
-                                          }
-                                          rows={3}
-                                          placeholder="What did you notice? How did it feel?"
-                                          style={{
-                                            width: "100%",
-                                            padding: "10px",
-                                            border:
-                                              "1px solid #ddd",
-                                            borderRadius:
-                                              "8px",
-                                            fontSize:
-                                              "14px",
-                                            boxSizing:
-                                              "border-box",
-                                            resize:
-                                              "vertical",
-                                          }}
-                                        />
+                                          <div
+                                            style={{
+                                              fontSize: "13px",
+                                              color: "#777",
+                                              marginTop: "6px",
+                                            }}
+                                          >
+                                            {reflection.mood ===
+                                            "great"
+                                              ? "Great 😊"
+                                              : reflection.mood ===
+                                                "good"
+                                              ? "Good 🙂"
+                                              : reflection.mood ===
+                                                "okay"
+                                              ? "Okay 😐"
+                                              : reflection.mood ===
+                                                "difficult"
+                                              ? "Difficult 😕"
+                                              : reflection.mood}
+                                            {" · "}
+                                            {new Date(
+                                              reflection.created_at
+                                            ).toLocaleString(
+                                              [],
+                                              {
+                                                dateStyle:
+                                                  "medium",
+                                                timeStyle:
+                                                  "short",
+                                              }
+                                            )}
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                )}
 
-                                        <label
-                                          style={{
-                                            display: "block",
-                                            marginTop: "12px",
-                                            marginBottom:
-                                              "6px",
-                                            fontSize:
-                                              "14px",
-                                          }}
-                                        >
-                                          How are you feeling?
-                                        </label>
+                                {/* REFLECTION */}
 
-                                        <select
-                                          value={
-                                            reflectionMood
-                                          }
-                                          onChange={(e) =>
-                                            setReflectionMood(
-                                              e.target.value
-                                            )
-                                          }
+                                {task.status === "completed" && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setShowReflection(
+                                          true
+                                        );
+                                        setReflectionTaskId(
+                                          task.id
+                                        );
+                                        setReflectionText("");
+                                        setReflectionMood("");
+                                        setMessage("");
+                                      }}
+                                      style={{
+                                        marginTop: "10px",
+                                        marginLeft: "20px",
+                                        background: "none",
+                                        border: "none",
+                                        color: "#555",
+                                        cursor: "pointer",
+                                        textDecoration:
+                                          "underline",
+                                      }}
+                                    >
+                                      Reflect on this
+                                    </button>
+
+                                    {showReflection &&
+                                      reflectionTaskId ===
+                                        task.id && (
+                                        <div
                                           style={{
-                                            width: "100%",
-                                            padding: "10px",
-                                            border:
-                                              "1px solid #ddd",
-                                            borderRadius:
-                                              "8px",
-                                            fontSize:
-                                              "14px",
+                                            marginTop: "15px",
+                                            marginLeft: "20px",
+                                            padding: "15px",
                                             background:
                                               "white",
-                                          }}
-                                        >
-                                          <option value="">
-                                            Choose one
-                                          </option>
-                                          <option value="great">
-                                            Great 😊
-                                          </option>
-                                          <option value="good">
-                                            Good 🙂
-                                          </option>
-                                          <option value="okay">
-                                            Okay 😐
-                                          </option>
-                                          <option value="difficult">
-                                            Difficult 😕
-                                          </option>
-                                        </select>
-
-                                        <button
-                                          type="button"
-                                          disabled={
-                                            reflectionLoading
-                                          }
-                                          onClick={() =>
-                                            handleSaveReflection(
-                                              task
-                                            )
-                                          }
-                                          style={{
-                                            width: "100%",
-                                            padding: "10px",
-                                            marginTop:
-                                              "12px",
-                                            background:
-                                              "#171717",
-                                            color: "white",
-                                            border: "none",
                                             borderRadius:
-                                              "8px",
-                                            fontSize:
-                                              "14px",
-                                            cursor:
-                                              reflectionLoading
-                                                ? "default"
-                                                : "pointer",
+                                              "10px",
+                                            border:
+                                              "1px solid #ddd",
                                           }}
                                         >
-                                          {reflectionLoading
-                                            ? "Saving..."
-                                            : "Save reflection"}
-                                        </button>
+                                          <h4
+                                            style={{
+                                              marginTop: 0,
+                                            }}
+                                          >
+                                            How did that go?
+                                          </h4>
 
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setShowReflection(
-                                              false
-                                            );
-                                            setReflectionTaskId(
-                                              null
-                                            );
-                                            setReflectionText(
-                                              ""
-                                            );
-                                            setReflectionMood(
-                                              ""
-                                            );
-                                          }}
-                                          style={{
-                                            width: "100%",
-                                            padding: "10px",
-                                            marginTop: "8px",
-                                            background:
-                                              "none",
-                                            border: "none",
-                                            color: "#666",
-                                            cursor: "pointer",
-                                          }}
-                                        >
-                                          Cancel
-                                        </button>
-                                      </div>
-                                    )}
-                                </>
-                              )}
-                            </div>
-                          ))
+                                          <textarea
+                                            value={
+                                              reflectionText
+                                            }
+                                            onChange={(e) =>
+                                              setReflectionText(
+                                                e.target.value
+                                              )
+                                            }
+                                            rows={3}
+                                            placeholder="What did you notice? How did it feel?"
+                                            style={{
+                                              width: "100%",
+                                              padding: "10px",
+                                              border:
+                                                "1px solid #ddd",
+                                              borderRadius:
+                                                "8px",
+                                              fontSize:
+                                                "14px",
+                                              boxSizing:
+                                                "border-box",
+                                              resize:
+                                                "vertical",
+                                            }}
+                                          />
+
+                                          <label
+                                            style={{
+                                              display: "block",
+                                              marginTop: "12px",
+                                              marginBottom:
+                                                "6px",
+                                              fontSize:
+                                                "14px",
+                                            }}
+                                          >
+                                            How are you feeling?
+                                          </label>
+
+                                          <select
+                                            value={
+                                              reflectionMood
+                                            }
+                                            onChange={(e) =>
+                                              setReflectionMood(
+                                                e.target.value
+                                              )
+                                            }
+                                            style={{
+                                              width: "100%",
+                                              padding: "10px",
+                                              border:
+                                                "1px solid #ddd",
+                                              borderRadius:
+                                                "8px",
+                                              fontSize:
+                                                "14px",
+                                              background:
+                                                "white",
+                                            }}
+                                          >
+                                            <option value="">
+                                              Choose one
+                                            </option>
+                                            <option value="great">
+                                              Great 😊
+                                            </option>
+                                            <option value="good">
+                                              Good 🙂
+                                            </option>
+                                            <option value="okay">
+                                              Okay 😐
+                                            </option>
+                                            <option value="difficult">
+                                              Difficult 😕
+                                            </option>
+                                          </select>
+
+                                          <button
+                                            type="button"
+                                            disabled={
+                                              reflectionLoading
+                                            }
+                                            onClick={() =>
+                                              handleSaveReflection(
+                                                task
+                                              )
+                                            }
+                                            style={{
+                                              width: "100%",
+                                              padding: "10px",
+                                              marginTop:
+                                                "12px",
+                                              background:
+                                                "#171717",
+                                              color: "white",
+                                              border: "none",
+                                              borderRadius:
+                                                "8px",
+                                              fontSize:
+                                                "14px",
+                                              cursor:
+                                                reflectionLoading
+                                                  ? "default"
+                                                  : "pointer",
+                                            }}
+                                          >
+                                            {reflectionLoading
+                                              ? "Saving..."
+                                              : "Save reflection"}
+                                          </button>
+
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setShowReflection(
+                                                false
+                                              );
+                                              setReflectionTaskId(
+                                                null
+                                              );
+                                              setReflectionText(
+                                                ""
+                                              );
+                                              setReflectionMood(
+                                                ""
+                                              );
+                                            }}
+                                            style={{
+                                              width: "100%",
+                                              padding: "10px",
+                                              marginTop: "8px",
+                                              background:
+                                                "none",
+                                              border: "none",
+                                              color: "#666",
+                                              cursor: "pointer",
+                                            }}
+                                          >
+                                            Cancel
+                                          </button>
+                                        </div>
+                                      )}
+                                  </>
+                                )}
+                              </div>
+                            );
+                          })
                         )}
 
                         {/* ADD SMALL STEP BUTTON */}
