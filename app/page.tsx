@@ -18,6 +18,14 @@ type Task = {
   status: string;
 };
 
+type Reflection = {
+  id: string;
+  user_id: string;
+  task_id: string | null;
+  content: string | null;
+  mood: string | null;
+};
+
 export default function HomePage() {
   const supabase = createClient();
 
