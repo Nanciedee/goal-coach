@@ -805,17 +805,24 @@ export default function HomePage() {
       </div>
 
       {reflection.mood && (
-        <div
-          style={{
-            fontSize: "13px",
-            color: "#777",
-            marginTop: "6px",
-          }}
-        >
-          Mood: {reflection.mood}
-        </div>
-      )}
-    </div>
+  <div
+    style={{
+      fontSize: "13px",
+      color: "#777",
+      marginTop: "6px",
+    }}
+  >
+    Mood:{" "}
+    {reflection.mood === "great"
+      ? "Great 😊"
+      : reflection.mood === "good"
+      ? "Good 🙂"
+      : reflection.mood === "okay"
+      ? "Okay 😐"
+      : reflection.mood === "difficult"
+      ? "Difficult 😕"
+      : reflection.mood}
+  </div>
   ))}
 
 {/* REFLECTION */}
