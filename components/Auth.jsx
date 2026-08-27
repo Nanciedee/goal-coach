@@ -1,8 +1,8 @@
 "use client"; // Required by Next.js for form submissions and state hooks
 
 import { useState } from 'react'
-import { createClient } from '../lib/supabase' // Updated to match your Next.js Supabase client wrapper
-import { Btn, DARK } from './ui' // Cleaner absolute path alias mapping
+import { createClient } from '../lib/supabase' // Safely points to root lib folder
+import { Btn, DARK } from './ui' // Clean sibling directory mapping
 
 export default function Auth() {
   const supabase = createClient() // Instantiate the client inside the component container
@@ -27,7 +27,6 @@ export default function Auth() {
     }
     setLoading(false)
   }
-
   return (
     <div style={{ minHeight: '100vh', background: '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 420, background: '#fff', padding: 40, borderRadius: 20, boxShadow: '0 10px 30px rgba(0,0,0,0.08)' }}>
@@ -43,14 +42,14 @@ export default function Auth() {
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-          <label style={{ fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Email</label>
+          <label style={{ display: 'block', fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Email</label>
           <input type="email" value={email} required onChange={e => setEmail(e.target.value)}
-            placeholder="you@email.com" style={{ marginBottom: 16 }} />
+            placeholder="you@email.com" style={{ marginBottom: 16, width: '100%', padding: '10px', border: '1px solid #e0ddd8', borderRadius: 8, outline: 'none' }} />
 
-          <label style={{ fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Password</label>
+          <label style={{ display: 'block', fontSize: 14, marginBottom: 6, fontWeight: 500 }}>Password</label>
           <input type="password" value={password} required minLength={6}
             onChange={e => setPassword(e.target.value)}
-            placeholder="At least 6 characters" style={{ marginBottom: 20 }} />
+            placeholder="At least 6 characters" style={{ marginBottom: 20, width: '100%', padding: '10px', border: '1px solid #e0ddd8', borderRadius: 8, outline: 'none' }} />
 
           {error   && <p style={{ fontSize: 13, color: '#dc2626', marginBottom: 12, lineHeight: 1.5 }}>{error}</p>}
           {message && <p style={{ fontSize: 13, color: GREEN, marginBottom: 12, lineHeight: 1.5 }}>{message}</p>}
