@@ -88,7 +88,6 @@ export default function GoalsScreen({ goals, saveGoals, today, saveToday }) {
     if (goals.length >= 5) { setErr('Max 5 goals — stay focused on what matters most'); return }
     setErr(''); setLoading(true)
 
-    // Simulating a quick visual computer generation delay for natural app feel
     setTimeout(async () => {
       const targetTitle = input.trim();
       const steps = generateLocalSteps(targetTitle);
@@ -122,7 +121,6 @@ export default function GoalsScreen({ goals, saveGoals, today, saveToday }) {
       await saveToday({ ...today, focus_goal_id: updated[0]?.id || null, focus_step_override: null, ai_reframe: null, completed: false })
     }
   }
-
   return (
     <div style={{ padding: '1.5rem' }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: '1.25rem', color: '#171717' }}>Goals</h2>
@@ -193,4 +191,36 @@ export default function GoalsScreen({ goals, saveGoals, today, saveToday }) {
                 {/* Progress bar */}
                 <div style={{ marginBottom: isExp ? 14 : 0 }}>
                   <div style={{ height: 4, background: '#f0efec', borderRadius: 2 }}>
-<div style={{ height: '100%', background: DARK, borderRadius: 2, width: ${pct}%, transition: 'width 0.3s' }} /><p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{pct}% complete{/* Steps */}{isExp && g.steps && (<div style={{ display: 'flex', flexDirection: 'column', gap: 9, paddingTop: 4 }}>{g.steps.map((s, i) => (<div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', opacity: i < (g.current_step || 0) ? 0.45 : 1 }}><div style={{minWidth: 22, height: 22, borderRadius: '50%', display: 'flex',alignItems: 'center', justifyContent: 'center', marginTop: 1,background: i < (g.current_step || 0) ? GREEN : '#f0efec',flexShrink: 0,}}>{i < (g.current_step || 0)? <i className="ti ti-check" style={{ fontSize: 12, color: 'white' }} />: <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>{i + 1}}<p style={{ fontSize: 13, lineHeight: 1.55, color: '#333', flex: 1 }}>{s}))})})})})})
+                    <div style={{ height: '100%', background: DARK, borderRadius: 2, width: `${pct}%`, transition: 'width 0.3s' }} />
+                  </div>
+                  <p style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{pct}% complete</p>
+                </div>
+
+                {/* Steps render list block */}
+                {isExp && g.steps && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 9, paddingTop: 4 }}>
+                    {g.steps.map((s, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', opacity: i < (g.current_step || 0) ? 0.45 : 1 }}>
+                        <div style={{
+                          minWidth: 22, height: 22, borderRadius: '50%', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', marginTop: 1,
+                          background: i < (g.current_step || 0) ? GREEN : '#f0efec',
+                          flexShrink: 0,
+                        }}>
+                          {i < (g.current_step || 0)
+                            ? <i className="ti ti-check" style={{ fontSize: 12, color: 'white' }} />
+                            : <span style={{ fontSize: 10, color: '#888', fontWeight: 600 }}>{i + 1}</span>}
+                        </div>
+                        <p style={{ fontSize: 13, lineHeight: 1.55, color: '#333', flex: 1 }}>{s}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
