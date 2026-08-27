@@ -1,7 +1,7 @@
 "use client"; // Required by Next.js for step toggles, form states, and click hooks
 
 import { useState } from 'react'
-import { Btn, DARK } from '@/components/ui' // Upgraded to Next.js path alias mapping
+import { Btn, DARK } from './ui' // Upgraded to Next.js path alias mapping
 
 const QUIZ = [
   { id: 'name', q: "What's your name?", type: 'text', ph: 'Your first name' },
