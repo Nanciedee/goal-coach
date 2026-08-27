@@ -1,7 +1,7 @@
 "use client"; // Required by Next.js for interactive text inputs and form states
 
 import { useState } from 'react'
-import { Btn, Card, DARK, GREEN } from '@/components/ui'
+import { Btn, Card, DARK, GREEN } from './ui'
 
 const MOODS = [
   { emoji: '💪', label: 'Energized' },
