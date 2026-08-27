@@ -1,7 +1,7 @@
 "use client"; // Required by Next.js for interactive inputs, toggles, and state
 
 import { useState } from 'react'
-import { Btn, Card, Pill, DARK, BLUE, GREEN } from '@/components/ui' // Path updated to Next.js alias
+import { Btn, Card, Pill, DARK, BLUE, GREEN } from './ui' // Path updated to Next.js alias
 
 // Local Database of Atomic Steps (No AI needed)
 const LOCAL_STEP_TEMPLATES = {
