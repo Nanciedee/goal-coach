@@ -1,5 +1,7 @@
+"use client"; // Required by Next.js for local hooks, audio interaction, and scroll ref tracking
+
 import { useState, useEffect, useRef } from 'react'
-import { BLUE, CORAL, GREEN, GREENLT, GREENBDR, GREENDARK } from './ui'
+import { BLUE, CORAL, GREEN, GREENLT, GREENBDR, GREENDARK } from '@/components/ui' // Path updated to Next.js alias
 
 const BLOCKS = {
   procrastination: 'task paralysis and avoidance',
@@ -52,6 +54,9 @@ Be brief (3–5 sentences). Warm and direct. Validate first, then gently challen
   }
 
   function toggleVoice() {
+    // Wrapped in a typeof window check to safeguard server execution checks during compilation
+    if (typeof window === 'undefined') return;
+
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) { alert('Voice input not supported in this browser. Try Chrome.'); return }
     if (listening) { recogRef.current?.stop(); setListening(false); return }
@@ -145,7 +150,7 @@ Be brief (3–5 sentences). Warm and direct. Validate first, then gently challen
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
             disabled={loading}
-            style={{ border: `1px solid ${GREENBDR}`, background: 'white', fontSize: 14 }} />
+            style={{ border: `1px solid ${GREENBDR}`, background: 'white', fontSize: 14, flex: 1, padding: '0 10px', borderRadius: 8 }} />
           <button onClick={send} disabled={loading || !input.trim()} style={{
             background: GREEN, color: 'white', border: 'none', borderRadius: 10,
             padding: '10px 16px', cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
