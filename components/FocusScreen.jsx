@@ -1,3 +1,5 @@
+"use client"; // Required by Next.js for button interactions, state tracking, and click event flows
+
 import { useState } from 'react'
 import { Btn, Card, Pill, DARK, BLUE, CORAL, GREEN } from './ui'
 
@@ -7,6 +9,15 @@ const BLOCKS = {
   overwhelm:       'cognitive overwhelm and decision fatigue',
   inconsistency:   'motivation fluctuation and habit gaps',
 }
+
+// Local CBT Behavioral Reassurance Generator (No AI needed)
+const LOCAL_REFRAMES = {
+  1: "Energy is very low. Lowering the bar isn't quitting; it's a strategic retreat to protect your consistency.",
+  2: "Energy is low. Be gentle with your timeline today. A small action counts just as much as a giant leap.",
+  3: "Energy is moderate. Show up with an open mind. Momentum builds up naturally once you handle the friction.",
+  4: "Energy is high. You have a great focus runway ahead. Lock out distractions and make some solid headway.",
+  5: "Energy is fantastic! Take full advantage of this peak flow state to check off a demanding step."
+};
 
 export default function FocusScreen({ profile, goals, today, saveToday, saveGoals }) {
   const [aiLoading, setAiLoading] = useState(false)
@@ -21,21 +32,30 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
   async function recalibrate() {
     if (!activeGoal?.steps?.length) return
     setAiLoading(true)
-    const elabels = ['very low', 'low', 'moderate', 'high', 'very high']
-    try {
-      const res = await fetch('/api/claude', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system: `You are an adaptive focus coach helping someone who struggles with ${BLOCKS[profile?.block] || 'general resistance'}. Pick the best step for their energy and give a short warm CBT-based reframe (1 sentence).`,
-          user: `Goal:"${activeGoal.title}"\nSteps:\n${activeGoal.steps.map((s, i) => `${i}.${s}`).join('\n')}\nCurrent step:${stepIdx}\nEnergy:${elabels[(today.energy_level || 3) - 1]}\n\nJSON only:{"stepIndex":number,"reframe":"string"}`,
-        }),
-      })
-      const { text } = await res.json()
-      const parsed = JSON.parse(text.replace(/```json?|```/g, '').trim())
-      await saveToday({ ...today, focus_step_override: parsed.stepIndex, ai_reframe: parsed.reframe })
-    } catch {}
-    setAiLoading(false)
+    
+    // Simulating a quick visual local process latency for a realistic, premium app experience
+    setTimeout(async () => {
+      const currentEnergy = today.energy_level || 3;
+      
+      // Calculate target step index based on user energy setting variations
+      let targetIndex = activeGoal.current_step || 0;
+      if (currentEnergy <= 2) {
+        // Drop difficulty step setting backward if energy is heavily drained
+        targetIndex = Math.max(0, targetIndex - 1);
+      } else if (currentEnergy >= 4) {
+        // Challenge user slightly forward if energy levels peak out
+        targetIndex = Math.min(activeGoal.steps.length - 1, targetIndex + 1);
+      }
+
+      const generatedReframe = LOCAL_REFRAMES[currentEnergy] || LOCAL_REFRAMES[3];
+
+      await saveToday({ 
+        ...today, 
+        focus_step_override: targetIndex, 
+        ai_reframe: generatedReframe 
+      });
+      setAiLoading(false)
+    }, 450);
   }
 
   async function markDone() {
@@ -51,9 +71,8 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
     await saveToday({ ...today, completed: true })
     setTimeout(() => setFlash(false), 2000)
   }
-
   return (
-    <div style={{ padding: '1.5rem' }}>
+    <div style={{ padding: '1.5rem', fontFamily: 'Arial, sans-serif' }}>
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: '1.5rem' }}>
         <Card style={{ padding: '12px 14px' }}>
@@ -66,7 +85,7 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
         </Card>
         <Card style={{ padding: '12px 14px' }}>
           <p style={{ fontSize: 10, color: '#888', marginBottom: 4, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>Energy</p>
-          <div style={{ display: 'flex', gap: 3 }}>
+          <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
             {[1, 2, 3, 4, 5].map(n => (
               <div key={n} onClick={() => saveToday({ ...today, energy_level: n })}
                 style={{ width: 9, height: 16, borderRadius: 3, cursor: 'pointer', background: n <= (today.energy_level || 3) ? CORAL : '#e8e5e0', transition: 'background 0.15s' }} />
@@ -107,7 +126,7 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
             </p>
             {today.ai_reframe && (
               <div style={{ borderTop: '1px solid #f0efec', paddingTop: 12 }}>
-                <p style={{ fontSize: 13, color: BLUE, lineHeight: 1.6 }}>
+                <p style={{ fontSize: 13, color: BLUE, lineHeight: 1.6, margin: 0 }}>
                   <i className="ti ti-sparkles" style={{ fontSize: 13, marginRight: 5 }} />
                   {today.ai_reframe}
                 </p>
