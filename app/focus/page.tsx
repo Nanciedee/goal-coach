@@ -3,15 +3,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase";
 
-// Import your custom components
-import Auth from "../../components/Auth";
-import GoalsScreen from "../../components/GoalsScreen";
-import CoachScreen from "../../components/CoachScreen";
-import JournalScreen from "../../components/JournalScreen";
-import ProgressScreen from "../../components/ProgressScreen";
-import NavBar from "../../components/NavBar";
-import { DARK } from "../../components/ui";
-
 type Task = {
   id: string;
   goal_id: string;
@@ -25,32 +16,9 @@ type Goal = {
   title: string;
 };
 
-const TODAY = new Date().toDateString();
-
-const DEFAULT_TODAY = {
-  date: TODAY,
-  energy_level: 3,
-  focus_goal_id: null,
-  focus_step_override: null,
-  completed: false,
-  journal_entry: "",
-  mood: null,
-  ai_reframe: null,
-};
-
 export default function FocusPage() {
   const supabase = createClient();
 
-  // ── Multi-Screen Dashboard State ───────────────────────────
-  const [session, setSession] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [goalsState, setGoalsState] = useState<any[]>([]);
-  const [today, setToday] = useState<any>(DEFAULT_TODAY);
-  const [chat, setChat] = useState<any[]>([]);
-  const [screen, setScreen] = useState("focus");
-  const [globalLoading, setGlobalLoading] = useState(true);
-
-  // ── Focus Page Active Task State ───────────────────────────
   const [tasks, setTasks] = useState<Task[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,97 +31,120 @@ export default function FocusPage() {
   const [reflectionLoading, setReflectionLoading] = useState(false);
   const [reflectionSaved, setReflectionSaved] = useState(false);
 
-  // ── Unified Initial Data Sync ──────────────────────────────
-  async function loadDashboardAndTasks(uid: string) {
-    setGlobalLoading(true);
+  async function loadFocusTask() {
     setLoading(true);
     setMessage("");
 
-    try {
-      const [{ data: prof }, { data: gls }, { data: log }, { data: msgs }, { data: taskData }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", uid).single(),
-        supabase.from("goals").select("*").eq("user_id", uid).order("created_at"),
-        supabase.from("daily_logs").select("*").eq("user_id", uid).eq("date", TODAY).single(),
-        supabase.from("chat_messages").select("*").eq("user_id", uid).order("created_at").limit(40),
-        supabase.from("tasks").select("id, goal_id, title, description, status").eq("user_id", uid).neq("status", "completed").order("created_at", { ascending: true }).limit(1)
-      ]);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (prof) setProfile(prof);
-      if (gls) {
-        setGoalsState(gls);
-        setGoals(gls || []);
-      }
-      if (log) setToday(log);
-      if (msgs) setChat(msgs);
-      if (taskData) setTasks(taskData || []);
-
-    } catch (err: any) {
-      setMessage("Failed to load application data context.");
-    } finally {
-      setGlobalLoading(false);
+    if (!user) {
+      setMessage("Please sign in first.");
       setLoading(false);
+      return;
     }
+
+    const { data: goalData, error: goalError } = await supabase
+      .from("goals")
+      .select("id, title")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
+
+    if (goalError) {
+      setMessage(goalError.message);
+      setLoading(false);
+      return;
+    }
+
+    setGoals(goalData || []);
+
+    const { data: taskData, error: taskError } = await supabase
+      .from("tasks")
+      .select("id, goal_id, title, description, status")
+      .eq("user_id", user.id)
+      .neq("status", "completed")
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    if (taskError) {
+      setMessage(taskError.message);
+      setLoading(false);
+      return;
+    }
+
+    setTasks(taskData || []);
+    setLoading(false);
   }
 
-  // ── Isolated Core Authentication Observer ──────────────────
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
-        loadDashboardAndTasks(currentSession.user.id);
-      } else {
-        setGlobalLoading(false);
-        setLoading(false);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
-        loadDashboardAndTasks(currentSession.user.id);
-      } else {
-        setProfile(null);
-        setGoalsState([]);
-        setTasks([]);
-        setGlobalLoading(false);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    loadFocusTask();
   }, []);
 
-  // ── Core Task Actions ──────────────────────────────────────
   async function handleComplete(task: Task) {
-    if (!session?.user) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMessage("Please sign in first.");
+      return;
+    }
+
     setCompleting(true);
     setMessage("");
 
     const { error } = await supabase
       .from("tasks")
-      .update({ status: "completed", completed_at: new Date().toISOString() })
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      })
       .eq("id", task.id)
-      .eq("user_id", session.user.id);
+      .eq("user_id", user.id);
 
-    if (error) {
+        if (error) {
       setMessage(error.message);
       setCompleting(false);
       return;
     }
 
-    await supabase.from("xp").insert({
-      user_id: session.user.id,
-      amount: 10,
-      reason: "task_completed",
-      task_id: task.id,
-    });
+    const { error: xpError } = await supabase
+      .from("xp")
+      .insert({
+        user_id: user.id,
+        amount: 10,
+        reason: "task_completed",
+        task_id: task.id,
+      });
+
+    if (xpError) {
+      setMessage(`Task completed, but XP could not be saved: ${xpError.message}`);
+      setCompleting(false);
+      return;
+    }
 
     setTasks([]);
     setCompletedTask(task);
+    setMessage("");
     setCompleting(false);
   }
+
   async function handleSaveReflection() {
-    if (!completedTask || !session?.user) return;
+
+    if (!completedTask) {
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setMessage("Please sign in first.");
+      return;
+    }
+
     if (!reflectionText.trim()) {
       setMessage("Please write a short reflection.");
       return;
@@ -162,12 +153,14 @@ export default function FocusPage() {
     setReflectionLoading(true);
     setMessage("");
 
-    const { error } = await supabase.from("reflections").insert({
-      user_id: session.user.id,
-      task_id: completedTask.id,
-      content: reflectionText.trim(),
-      mood: reflectionMood || null,
-    });
+    const { error } = await supabase
+      .from("reflections")
+      .insert({
+        user_id: user.id,
+        task_id: completedTask.id,
+        content: reflectionText.trim(),
+        mood: reflectionMood || null,
+      });
 
     if (error) {
       setMessage(`Could not save reflection: ${error.message}`);
@@ -182,135 +175,436 @@ export default function FocusPage() {
     setReflectionLoading(false);
   }
 
-  // ── Global Save Handlers for nested layout sub views ───────
-  async function saveProfile(data: any) {
-    if (!session?.user) return;
-    const row = { id: session.user.id, ...data };
-    await supabase.from("profiles").upsert(row);
-    setProfile(row);
-  }
-
-  async function saveGoals(newGoals: any[]) {
-    if (!session?.user) return;
-    setGoalsState(newGoals);
-    const uid = session.user.id;
-    for (const g of newGoals) {
-      await supabase.from("goals").upsert({ ...g, user_id: uid });
-    }
-    const ids = newGoals.map((g) => g.id);
-    if (ids.length > 0) {
-      await supabase.from("goals").delete().eq("user_id", uid).not("id", "in", `(${ids.join(",")})`);
-    } else {
-      await supabase.from("goals").delete().eq("user_id", uid);
-    }
-  }
-
-  async function saveToday(data: any) {
-    if (!session?.user) return;
-    const row = { ...data, user_id: session.user.id, date: TODAY };
-    setToday(row);
-    await supabase.from("daily_logs").upsert(row, { onConflict: "user_id,date" });
-  }
-
-  async function saveChat(messages: any[]) {
-    if (!session?.user) return;
-    setChat(messages);
-    const uid = session.user.id;
-    await supabase.from("chat_messages").delete().eq("user_id", uid);
-    if (messages.length > 0) {
-      await supabase.from("chat_messages").insert(
-        messages.map((m) => ({ user_id: uid, role: m.role, content: m.content }))
-      );
-    }
-  }
-
-  // ── Computed Render Variables ──────────────────────────────
   const currentTask = tasks.length > 0 ? tasks[0] : null;
-  const currentGoal = currentTask ? goals.find((goal) => goal.id === currentTask.goal_id) : null;
 
-  if (globalLoading || loading) {
+  const currentGoal = currentTask
+    ? goals.find((goal) => goal.id === currentTask.goal_id)
+    : null;
+
+  if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f8f7f4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Arial, sans-serif" }}>
-        <p style={{ color: "#666" }}>Loading your focus…</p>
-      </div>
+      <main
+        style={{
+          minHeight: "100vh",
+          background: "#f8f7f4",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
+        <p style={{ color: "#666" }}>Loading your focus...</p>
+      </main>
     );
   }
 
-  if (!session) return <Auth />;
-
-  const isCoach = screen === "coach";
-  const componentProps = { profile, goals: goalsState, today, chatHistory: chat, saveGoals, saveToday, saveChat };
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: DARK ? "#121212" : "#fff", color: DARK ? "#fff" : "#000" }}>
-      {/* App Header */}
-      {!isCoach && (
-        <div style={{ padding: "14px 1.5rem 12px", borderBottom: "1px solid #e8e5e0", background: DARK ? "#1e1e1e" : "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <h1 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "600" }}>Goal Coach</h1>
-          {message && <span style={{ fontSize: "0.875rem", color: "#e53e3e" }}>{message}</span>}
-        </div>
-      )}
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#f8f7f4",
+        padding: "40px 24px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "600px",
+          margin: "0 auto",
+        }}
+      >
+        <div
+          style={{
+            background: "white",
+            padding: "40px",
+            borderRadius: "20px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+        >
+          {/* BACK TO GOALS */}
 
-      {/* Screen Router Body */}
-      <div style={{ flex: 1, padding: "1.5rem" }}>
-        {screen === "focus" && (
-          <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-            {currentTask ? (
-              <div style={{ padding: "2rem", border: "1px solid #e8e5e0", borderRadius: "8px", background: DARK ? "#1e1e1e" : "#fff" }}>
-                {currentGoal && <p style={{ fontSize: "0.875rem", color: "#888", marginBottom: "0.5rem" }}>Goal: {currentGoal.title}</p>}
-                <h2 style={{ marginTop: 0 }}>{currentTask.title}</h2>
-                {currentTask.description && <p style={{ color: "#555" }}>{currentTask.description}</p>}
-                <button 
-                  disabled={completing} 
-                  onClick={() => handleComplete(currentTask)}
-                  style={{ marginTop: "1rem", padding: "0.75rem 1.5rem", background: "#4a5568", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/";
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              color: "#666",
+              cursor: "pointer",
+              fontSize: "14px",
+              marginBottom: "30px",
+              textDecoration: "underline",
+            }}
+          >
+            ← Back to Goal Coach
+          </button>
+
+          {/* HEADER */}
+
+          <p
+            style={{
+              color: "#777",
+              fontSize: "14px",
+              marginBottom: "8px",
+              letterSpacing: "0.5px",
+            }}
+          >
+            ONE-THING FOCUS
+          </p>
+
+          <h1
+            style={{
+              fontSize: "36px",
+              marginTop: 0,
+              marginBottom: "10px",
+            }}
+          >
+            Today's focus
+          </h1>
+
+          <p
+            style={{
+              color: "#666",
+              fontSize: "17px",
+              lineHeight: 1.5,
+            }}
+          >
+            You don't need to do everything today.
+            <br />
+            Just focus on one small step.
+          </p>
+
+          <hr
+            style={{
+              border: "none",
+              borderTop: "1px solid #eee",
+              margin: "30px 0",
+            }}
+          />
+
+          {/* AFTER COMPLETING A TASK */}
+
+          {!currentTask && completedTask && !reflectionSaved ? (
+            <div>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "10px 0 20px 0",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "42px",
+                    marginBottom: "10px",
+                  }}
                 >
-                  {completing ? "Completing..." : "Mark as Completed (+10 XP)"}
-                </button>
-              </div>
-            ) : completedTask && !reflectionSaved ? (
-              <div style={{ padding: "2rem", border: "1px solid #e8e5e0", borderRadius: "8px", background: DARK ? "#1e1e1e" : "#fff" }}>
-                <h3>Good Job! Reflect on your task</h3>
-                <p>Task: {completedTask.title}</p>
-                <textarea 
-                  value={reflectionText}
-                  onChange={(e) => setReflectionText(e.target.value)}
-                  placeholder="How did it go? What did you learn?"
-                  style={{ width: "100%", height: "100px", padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc" }}
-                />
-                <div style={{ marginTop: "1rem" }}>
-                  <input 
-                    type="text" 
-                    value={reflectionMood} 
-                    onChange={(e) => setReflectionMood(e.target.value)} 
-                    placeholder="Mood (optional)" 
-                    style={{ padding: "0.5rem", borderRadius: "4px", border: "1px solid #ccc", marginRight: "1rem" }}
-                  />
-                  <button 
-                    disabled={reflectionLoading} 
-                    onClick={handleSaveReflection}
-                    style={{ padding: "0.5rem 1rem", background: "#319795", color: "#fff", border: "none", borderRadius: "4px", cursor: "pointer" }}
-                  >
-                    {reflectionLoading ? "Saving..." : "Save Reflection"}
-                  </button>
+                  🎉
                 </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", padding: "3rem 0" }}>
-                <p>All clear! No pending focus tasks available.</p>
-              </div>
-            )}
-          </div>
-        )}
 
-        {screen === "goals" && <GoalsScreen {...componentProps} />}
-        {screen === "coach" && <CoachScreen {...componentProps} />}
-        {screen === "journal" && <JournalScreen {...componentProps} />}
-        {screen === "progress" && <ProgressScreen {...componentProps} />}
+                <h2
+                  style={{
+                    marginTop: 0,
+                    marginBottom: "8px",
+                  }}
+                >
+                  You did it!
+                </h2>
+
+                <p
+                  style={{
+                    color: "#666",
+                    lineHeight: 1.5,
+                    margin: 0,
+                  }}
+                >
+                  Take a moment to notice how that went.
+                </p>
+              </div>
+
+              <div
+                style={{
+                  background: "#f8f7f4",
+                  padding: "15px",
+                  borderRadius: "10px",
+                  marginBottom: "20px",
+                }}
+              >
+                <strong>{completedTask.title}</strong>
+              </div>
+
+              <label
+                htmlFor="focusReflection"
+                style={{
+                  display: "block",
+                  marginBottom: "8px",
+                }}
+              >
+                How did it go?
+              </label>
+
+              <textarea
+                id="focusReflection"
+                value={reflectionText}
+                onChange={(e) => setReflectionText(e.target.value)}
+                rows={4}
+                placeholder="What did you notice? How did it feel?"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "1px solid #ddd",
+                  borderRadius: "10px",
+                  fontSize: "15px",
+                  boxSizing: "border-box",
+                  resize: "vertical",
+                }}
+              />
+
+              <label
+                htmlFor="focusMood"
+                style={{
+                  display: "block",
+                  marginTop: "15px",
+                  marginBottom: "8px",
+                }}
+              >
+                How are you feeling?
+              </label>
+
+              <select
+                id="focusMood"
+                value={reflectionMood}
+                onChange={(e) => setReflectionMood(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "1px solid #ddd",
+                  borderRadius: "10px",
+                  fontSize: "15px",
+                  background: "white",
+                }}
+              >
+                <option value="">Choose one</option>
+                <option value="great">Great 😊</option>
+                <option value="good">Good 🙂</option>
+                <option value="okay">Okay 😐</option>
+                <option value="difficult">Difficult 😕</option>
+              </select>
+
+              <button
+                type="button"
+                disabled={reflectionLoading}
+                onClick={handleSaveReflection}
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  marginTop: "18px",
+                  background: "#171717",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "16px",
+                  cursor: reflectionLoading ? "default" : "pointer",
+                }}
+              >
+                {reflectionLoading
+                  ? "Saving..."
+                  : "Save reflection"}
+              </button>
+
+              {message && (
+                <p
+                  style={{
+                    marginTop: "15px",
+                    padding: "12px",
+                    background: "#f4f4f4",
+                    borderRadius: "10px",
+                    color: "#444",
+                    textAlign: "center",
+                  }}
+                >
+                  {message}
+                </p>
+              )}
+            </div>
+          ) : !currentTask ? (
+            /* NO TASKS */
+
+            <div
+              style={{
+                textAlign: "center",
+                padding: "30px 10px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: "42px",
+                  marginBottom: "15px",
+                }}
+              >
+                🎉
+              </div>
+
+              <h2>You're all caught up!</h2>
+
+              <p
+                style={{
+                  color: "#666",
+                  lineHeight: 1.5,
+                }}
+              >
+                You don't have any unfinished small steps right now.
+              </p>
+
+              {message && (
+                <p
+                  style={{
+                    marginTop: "20px",
+                    padding: "12px",
+                    background: "#f4f4f4",
+                    borderRadius: "10px",
+                    color: "#444",
+                  }}
+                >
+                  {message}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+                style={{
+                  width: "100%",
+                  padding: "14px",
+                  marginTop: "20px",
+                  background: "#171717",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "16px",
+                  cursor: "pointer",
+                }}
+              >
+                Back to Goal Coach
+              </button>
+            </div>
+          ) : (
+            /* CURRENT TASK */
+
+            <div>
+              <p
+                style={{
+                  fontSize: "14px",
+                  color: "#888",
+                  marginBottom: "8px",
+                }}
+              >
+                Your one thing
+              </p>
+
+              <h2
+                style={{
+                  fontSize: "28px",
+                  marginTop: 0,
+                  marginBottom: "12px",
+                }}
+              >
+                {currentTask.title}
+              </h2>
+
+              {currentGoal && (
+                <p
+                  style={{
+                    color: "#777",
+                    fontSize: "14px",
+                    marginBottom: "18px",
+                  }}
+                >
+                  Goal: {currentGoal.title}
+                </p>
+              )}
+
+              {currentTask.description && (
+                <div
+                  style={{
+                    background: "#f8f7f4",
+                    padding: "18px",
+                    borderRadius: "12px",
+                    marginBottom: "25px",
+                  }}
+                >
+                  <p
+                    style={{
+                      color: "#666",
+                      lineHeight: 1.6,
+                      margin: 0,
+                    }}
+                  >
+                    {currentTask.description}
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                disabled={completing}
+                onClick={() => handleComplete(currentTask)}
+                style={{
+                  width: "100%",
+                  padding: "15px",
+                  background: completing ? "#555" : "#171717",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "10px",
+                  fontSize: "17px",
+                  cursor: completing ? "default" : "pointer",
+                }}
+              >
+                {completing ? "Saving..." : "I'm done ✓"}
+              </button>
+
+              {message && (
+                <p
+                  style={{
+                    marginTop: "20px",
+                    padding: "12px",
+                    background: "#f4f4f4",
+                    borderRadius: "10px",
+                    color: "#444",
+                    textAlign: "center",
+                  }}
+                >
+                  {message}
+                </p>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/";
+                }}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  marginTop: "12px",
+                  background: "none",
+                  border: "none",
+                  color: "#666",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                }}
+              >
+                Back to my goals
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Persistent Navigation */}
-      <NavBar currentScreen={screen} setScreen={setScreen} />
-    </div>
+    </main>
   );
 }
