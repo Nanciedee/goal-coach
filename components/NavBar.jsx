@@ -1,6 +1,6 @@
 "use client"; // Required by Next.js for button interactions and event tracking
 
-import { DARK, GREEN, GREENLT, GREENBDR } from '@/components/ui' // Upgraded to clean absolute directory mapping
+import { DARK, GREEN, GREENLT, GREENBDR } from './ui' // Upgraded to clean absolute directory mapping
 
 const TABS = [
   { id: 'focus',    l: 'Focus',    i: 'circle-dot'     },
