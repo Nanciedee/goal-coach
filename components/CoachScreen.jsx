@@ -1,14 +1,33 @@
-"use client"; // Required by Next.js for local hooks, audio interaction, and scroll ref tracking
+"use client"; 
 
 import { useState, useEffect, useRef } from 'react'
-import { BLUE, CORAL, GREEN, GREENLT, GREENBDR, GREENDARK } from '@/components/ui' // Path updated to Next.js alias
+import { BLUE, CORAL, GREEN, GREENLT, GREENBDR, GREENDARK } from '@/components/ui' 
 
-const BLOCKS = {
-  procrastination: 'task paralysis and avoidance',
-  perfectionism:   'perfectionism and all-or-nothing thinking',
-  overwhelm:       'cognitive overwhelm and decision fatigue',
-  inconsistency:   'motivation fluctuation and habit gaps',
-}
+const STARTERS = ["I'm feeling stuck today", "I keep avoiding this task", "I'm being too hard on myself", "I don't know where to begin"]
+
+// Local CBT Response Guidebook (No AI needed)
+const LOCAL_RESPONSES = {
+  procrastination: [
+    "I hear you. When we feel overwhelmed, our brain tries to protect us by avoiding the task completely. Can we break this down into a single step that takes less than 2 minutes?",
+    "That makes total sense. Procrastination isn't about laziness; it's about managing uncomfortable emotions around the task. What is the absolute smallest thing you could do right now?",
+    "Validation is key here—it's okay to feel stuck. Action creates motivation, not the other way around. What if you just opened the file or put your shoes on without promising to finish it?"
+  ],
+  perfectionism: [
+    "It sounds like that all-or-nothing thinking is creeping in. Remember, a messy attempt makes more progress than a perfect plan that never leaves your head. Can we aim for 'good enough' today?",
+    "Be gentle with yourself. Perfectionism sets a bar so high that it paralyzes us. What would this task look like if it was allowed to be a little rough around the edges?",
+    "I completely understand. Let's try to reframe this: failure is just data, not a reflection of your worth. What is one small, imperfect step you can take right now?"
+  ],
+  overwhelm: [
+    "Take a deep breath. When everything feels important, nothing is. Let's practice radical simplification: look at your list and pick just ONE thing. Ignore everything else for now.",
+    "Decision fatigue is very real. Your brain is running too many background apps right now. Let's close them out—what is the single next physical action you need to take?",
+    "I'm right here with you. When overwhelm strikes, shrink the timeline. Don't think about the whole week or even the whole day. What can you do in just the next 10 minutes?"
+  ],
+  inconsistency: [
+    "Fluctuations in motivation are completely natural—nobody stays fired up 24/7. Rely on your system instead of your feelings today. What small routine can we trigger?",
+    "It's okay if you missed a day or a habit gap occurred. The secret to consistency isn't never stopping; it's just restarting quickly. How can we make today a tiny win?",
+    "Progress isn't a straight line. Let's build momentum back up with a micro-action. What is a version of your goal that is so ridiculously easy you can't say no to it?"
+  ]
+};
 
 function AriaAvatar() {
   return (
@@ -18,54 +37,40 @@ function AriaAvatar() {
   )
 }
 
-const STARTERS = ["I'm feeling stuck today", "I keep avoiding this task", "I'm being too hard on myself", "I don't know where to begin"]
-
 export default function CoachScreen({ profile, chatHistory, saveChat }) {
-  const [input,     setInput]     = useState('')
-  const [loading,   setLoading]   = useState(false)
-  const [listening, setListening] = useState(false)
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
-  const recogRef  = useRef(null)
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [chatHistory, loading])
 
-  const SYS = `You are Aria, a warm and skilled CBT coach helping a family achieve their goals. You specialise in ${BLOCKS[profile?.block] || 'self-limiting patterns'}.
-User energy peaks: ${profile?.energy || 'variably'}. Motivated by: ${profile?.motivation || 'progress'}.
-Be brief (3–5 sentences). Warm and direct. Validate first, then gently challenge. Ask one question. Offer one micro-action when helpful. Never clinical or cold.`
+  // Get user's block category or default to overwhelm layout
+  const userBlock = profile?.block || 'overwhelm';
 
   async function send() {
     if (!input.trim() || loading) return
-    const msg  = input.trim()
+    const msg = input.trim()
     setInput('')
+    
+    // 1. Add user message to local array
     const hist = [...chatHistory, { role: 'user', content: msg }]
     await saveChat(hist)
+    
+    // 2. Trigger a brief visual typing delay for realism
     setLoading(true)
-    try {
-      const res = await fetch('/api/claude', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ system: SYS, user: msg, history: chatHistory.map(m => ({ role: m.role, content: m.content })) }),
-      })
-      const { text } = await res.json()
-      await saveChat([...hist, { role: 'assistant', content: text }])
-    } catch {
-      await saveChat([...hist, { role: 'assistant', content: "I'm having trouble connecting right now. Try again in a moment." }])
-    }
-    setLoading(false)
-  }
+    
+    setTimeout(async () => {
+      // 3. Pick a smart local response from our matrix based on their profile challenge
+      const pool = LOCAL_RESPONSES[userBlock] || LOCAL_RESPONSES['overwhelm'];
+      
+      // Cycle through responses based on chat history length so they don't get the same reply back-to-back
+      const responseIndex = Math.floor(hist.length / 2) % pool.length;
+      const localReply = pool[responseIndex];
 
-  function toggleVoice() {
-    // Wrapped in a typeof window check to safeguard server execution checks during compilation
-    if (typeof window === 'undefined') return;
-
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) { alert('Voice input not supported in this browser. Try Chrome.'); return }
-    if (listening) { recogRef.current?.stop(); setListening(false); return }
-    const r = new SR()
-    r.continuous = false; r.interimResults = false
-    r.onresult = e => { setInput(p => p + e.results[0][0].transcript); setListening(false) }
-    r.onerror = () => setListening(false)
-    r.onend   = () => setListening(false)
-    recogRef.current = r; r.start(); setListening(true)
+      // 4. Append Aria's safe local reply to the interface timeline
+      await saveChat([...hist, { role: 'assistant', content: localReply }]);
+      setLoading(false)
+    }, 1000); // 1-second dynamic typing effect
   }
 
   return (
@@ -102,12 +107,12 @@ Be brief (3–5 sentences). Warm and direct. Validate first, then gently challen
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
             <AriaAvatar />
             <div style={{ maxWidth: '84%', padding: '12px 14px', borderRadius: '16px 16px 16px 4px', background: 'white', border: `1px solid ${GREENBDR}`, fontSize: 14, lineHeight: 1.7, color: GREENDARK }}>
-              Hi {profile?.name || 'there'} — I'm Aria. This is your space to think out loud. What's weighing on you today?
+              Hi {profile?.name || 'there'} — I'm Aria. This is your space to think out loud without judgment. What's keeping you from moving forward today?
             </div>
           </div>
         )}
 
-        {/* Chat */}
+        {/* Chat Log History */}
         {chatHistory.map((m, i) =>
           m.role === 'user' ? (
             <div key={i} style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -137,30 +142,24 @@ Be brief (3–5 sentences). Warm and direct. Validate first, then gently challen
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
+      {/* Input controls layout */}
       <div style={{ background: GREENLT, borderTop: `1px solid ${GREENBDR}`, padding: '12px 1.5rem 16px' }}>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={toggleVoice} style={{
-            padding: '10px 13px', borderRadius: 10, border: `1px solid ${GREENBDR}`,
-            background: listening ? CORAL : 'white', color: listening ? 'white' : '#3B6D11', cursor: 'pointer',
-          }}>
-            <i className={`ti ti-microphone${listening ? '-off' : ''}`} style={{ fontSize: 17 }} />
-          </button>
-          <input value={input} placeholder="Share what's on your mind…"
+          <input value={input} placeholder="Talk with Aria..."
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
+            onKeyDown={e => e.key === 'Enter' && send()}
             disabled={loading}
-            style={{ border: `1px solid ${GREENBDR}`, background: 'white', fontSize: 14, flex: 1, padding: '0 10px', borderRadius: 8 }} />
+            style={{ border: `1px solid ${GREENBDR}`, background: 'white', fontSize: 14, flex: 1, padding: '0 12px', borderRadius: 8, height: 40 }} />
           <button onClick={send} disabled={loading || !input.trim()} style={{
             background: GREEN, color: 'white', border: 'none', borderRadius: 10,
-            padding: '10px 16px', cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
-            opacity: loading || !input.trim() ? 0.5 : 1,
+            padding: '0 20px', height: 40, cursor: loading || !input.trim() ? 'not-allowed' : 'pointer',
+            opacity: loading || !input.trim() ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
             <i className="ti ti-send" style={{ fontSize: 15 }} />
           </button>
         </div>
         {chatHistory.length > 0 && (
-          <button onClick={() => saveChat([])} style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#639922' }}>
+          <button onClick={() => saveChat([])} style={{ marginTop: 8, background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: '#639922', textDecoration: 'underline' }}>
             Clear conversation
           </button>
         )}
