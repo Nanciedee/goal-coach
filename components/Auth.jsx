@@ -1,8 +1,12 @@
+"use client"; // Required by Next.js for form submissions and state hooks
+
 import { useState } from 'react'
-import { supabase } from '../supabase'
-import { Btn, DARK } from './ui'
+import { createClient } from '../lib/supabase' // Updated to match your Next.js Supabase client wrapper
+import { Btn, DARK } from '@/components/ui' // Cleaner absolute path alias mapping
 
 export default function Auth() {
+  const supabase = createClient() // Instantiate the client inside the component container
+  
   const [mode, setMode]       = useState('login')
   const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
@@ -68,4 +72,3 @@ export default function Auth() {
 }
 
 const GREEN = '#1D9E75'
-
