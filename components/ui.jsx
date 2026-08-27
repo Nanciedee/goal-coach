@@ -1,3 +1,5 @@
+"use client"; // Required by Next.js for interactive button events
+
 // ── Design tokens ────────────────────────────────────────────
 export const DARK    = '#171717'   // Goal Coach primary (buttons, headers)
 export const BLUE    = '#185FA5'   // Attain accent (focus card border, XP)
@@ -8,6 +10,17 @@ export const GREENBDR= '#C0DD97'   // Aria coach border
 export const GREENDARK='#27500A'   // Aria coach text
 export const BEIGE   = '#f8f7f4'   // App background
 export const CARD    = '#ffffff'   // Card background
+
+// Helper function to safely apply opacity to hex colors
+const addAlphaToHex = (hex, alphaHex = '1a') => {
+  if (!hex || typeof hex !== 'string' || !hex.startsWith('#')) return 'transparent';
+  // If it's a 3-digit hex (#fff), convert it to 6 digits (#ffffff)
+  let cleanHex = hex;
+  if (hex.length === 4) {
+    cleanHex = `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+  }
+  return `${cleanHex}${alphaHex}`;
+};
 
 // ── Components ───────────────────────────────────────────────
 export function Btn({ children, onClick, variant = 'ghost', disabled, full, icon, style = {} }) {
@@ -52,7 +65,7 @@ export function Pill({ children, color = DARK }) {
     <span style={{
       display: 'inline-block', padding: '3px 11px', borderRadius: 20,
       fontSize: 11, fontWeight: 600, letterSpacing: 0.3,
-      background: color === DARK ? '#f0efec' : color + '1a',
+      background: color === DARK ? '#f0efec' : addAlphaToHex(color, '1a'),
       color,
     }}>
       {children}
