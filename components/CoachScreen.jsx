@@ -1,7 +1,7 @@
 "use client"; 
 
 import { useState, useEffect, useRef } from 'react'
-import { BLUE, CORAL, GREEN, GREENLT, GREENBDR, GREENDARK } from '@/components/ui' 
+import { BLUE, CORAL, GREEN, GREENLT, GREENBDR, GREENDARK } from './ui' 
 
 const STARTERS = ["I'm feeling stuck today", "I keep avoiding this task", "I'm being too hard on myself", "I don't know where to begin"]
 
