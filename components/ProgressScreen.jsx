@@ -1,6 +1,6 @@
 "use client"; // Declares this file as a Client Component for dynamic layout execution
 
-import { Card, DARK, BLUE, CORAL, GREEN } from '@/components/ui' // Path updated to Next.js alias
+import { Card, DARK, BLUE, CORAL, GREEN } from './ui' // Path updated to Next.js alias
 
 export default function ProgressScreen({ goals, today }) {
   const totalXP    = goals.reduce((s, g) => s + (g.xp    || 0), 0)
