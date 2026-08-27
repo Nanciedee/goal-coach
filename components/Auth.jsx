@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '../lib/supabase' // Updated to match your Next.js Supabase client wrapper
-import { Btn, DARK } from '@/components/ui' // Cleaner absolute path alias mapping
+import { Btn, DARK } from './ui' // Cleaner absolute path alias mapping
 
 export default function Auth() {
   const supabase = createClient() // Instantiate the client inside the component container
