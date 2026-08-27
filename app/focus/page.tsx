@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase";
 
-// Import your custom Vite components (Updated paths to match Next.js root)
+// Import your custom components
 import Auth from "../../components/Auth";
 import GoalsScreen from "../../components/GoalsScreen";
 import CoachScreen from "../../components/CoachScreen";
@@ -50,7 +50,7 @@ export default function FocusPage() {
   const [screen, setScreen] = useState("focus");
   const [globalLoading, setGlobalLoading] = useState(true);
 
-  // ── Your Specific Focus Task Page State ────────────────────
+  // ── Focus Page Active Task State ───────────────────────────
   const [tasks, setTasks] = useState<Task[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,114 +63,79 @@ export default function FocusPage() {
   const [reflectionLoading, setReflectionLoading] = useState(false);
   const [reflectionSaved, setReflectionSaved] = useState(false);
 
-  // ── Auth Listener ──────────────────────────────────────────
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+  // ── Unified Initial Data Sync ──────────────────────────────
+  async function loadDashboardAndTasks(uid: string) {
+    setGlobalLoading(true);
+    setLoading(true);
+    setMessage("");
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    try {
+      const [{ data: prof }, { data: gls }, { data: log }, { data: msgs }, { data: taskData }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", uid).single(),
+        supabase.from("goals").select("*").eq("user_id", uid).order("created_at"),
+        supabase.from("daily_logs").select("*").eq("user_id", uid).eq("date", TODAY).single(),
+        supabase.from("chat_messages").select("*").eq("user_id", uid).order("created_at").limit(40),
+        supabase.from("tasks").select("id, goal_id, title, description, status").eq("user_id", uid).neq("status", "completed").order("created_at", { ascending: true }).limit(1)
+      ]);
+
+      if (prof) setProfile(prof);
+      if (gls) {
+        setGoalsState(gls);
+        setGoals(gls || []);
+      }
+      if (log) setToday(log);
+      if (msgs) setChat(msgs);
+      if (taskData) setTasks(taskData || []);
+
+    } catch (err: any) {
+      setMessage("Failed to load application data context.");
+    } finally {
+      setGlobalLoading(false);
+      setLoading(false);
+    }
+  }
+
+  // ── Isolated Core Authentication Observer ──────────────────
+  useEffect(() => {
+    // 1. Check current fallback token container context parameters
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      if (currentSession?.user) {
+        loadDashboardAndTasks(currentSession.user.id);
+      } else {
+        setGlobalLoading(false);
+        setLoading(false);
+      }
+    });
+
+    // 2. Establish single auth subscription hook connection
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      setSession(currentSession);
+      if (currentSession?.user) {
+        loadDashboardAndTasks(currentSession.user.id);
+      } else {
+        setProfile(null);
+        setGoalsState([]);
+        setTasks([]);
+        setGlobalLoading(false);
+        setLoading(false);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Load Dashboard Data + Focus Page Tasks ──────────────────
-  useEffect(() => {
-    if (!session) {
-      setGlobalLoading(false);
-      setLoading(false);
-      return;
-    }
-    
-    // Run both your dashboard data loading and task loading together
-    loadAllDashboardData(session.user.id);
-    loadFocusTask();
-  }, [session]);
-
-  async function loadAllDashboardData(uid: string) {
-    setGlobalLoading(true);
-    const [{ data: prof }, { data: gls }, { data: log }, { data: msgs }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", uid).single(),
-      supabase.from("goals").select("*").eq("user_id", uid).order("created_at"),
-      supabase.from("daily_logs").select("*").eq("user_id", uid).eq("date", TODAY).single(),
-      supabase.from("chat_messages").select("*").eq("user_id", uid).order("created_at").limit(40),
-    ]);
-
-    if (prof) setProfile(prof);
-    if (gls) setGoalsState(gls);
-    if (log) setToday(log);
-    if (msgs) setChat(msgs);
-    setGlobalLoading(false);
-  }
-
-  async function loadFocusTask() {
-    setLoading(true);
-    setMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setMessage("Please sign in first.");
-      setLoading(false);
-      return;
-    }
-
-    const { data: goalData, error: goalError } = await supabase
-      .from("goals")
-      .select("id, title")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
-
-    if (goalError) {
-      setMessage(goalError.message);
-      setLoading(false);
-      return;
-    }
-
-    setGoals(goalData || []);
-
-    const { data: taskData, error: taskError } = await supabase
-      .from("tasks")
-      .select("id, goal_id, title, description, status")
-      .eq("user_id", user.id)
-      .neq("status", "completed")
-      .order("created_at", { ascending: true })
-      .limit(1);
-
-    if (taskError) {
-      setMessage(taskError.message);
-      setLoading(false);
-      return;
-    }
-
-    setTasks(taskData || []);
-    setLoading(false);
-  }
-
   // ── Core Task Actions ──────────────────────────────────────
   async function handleComplete(task: Task) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setMessage("Please sign in first.");
-      return;
-    }
-
+    if (!session?.user) return;
     setCompleting(true);
     setMessage("");
 
     const { error } = await supabase
       .from("tasks")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      })
+      .update({ status: "completed", completed_at: new Date().toISOString() })
       .eq("id", task.id)
-      .eq("user_id", user.id);
+      .eq("user_id", session.user.id);
 
     if (error) {
       setMessage(error.message);
@@ -178,39 +143,20 @@ export default function FocusPage() {
       return;
     }
 
-    const { error: xpError } = await supabase
-      .from("xp")
-      .insert({
-        user_id: user.id,
-        amount: 10,
-        reason: "task_completed",
-        task_id: task.id,
-      });
-
-    if (xpError) {
-      setMessage(`Task completed, but XP could not be saved: ${xpError.message}`);
-      setCompleting(false);
-      return;
-    }
+    const { error: xpError } = await supabase.from("xp").insert({
+      user_id: session.user.id,
+      amount: 10,
+      reason: "task_completed",
+      task_id: task.id,
+    });
 
     setTasks([]);
     setCompletedTask(task);
-    setMessage("");
     setCompleting(false);
   }
 
   async function handleSaveReflection() {
-    if (!completedTask) return;
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setMessage("Please sign in first.");
-      return;
-    }
-
+    if (!completedTask || !session?.user) return;
     if (!reflectionText.trim()) {
       setMessage("Please write a short reflection.");
       return;
@@ -219,14 +165,12 @@ export default function FocusPage() {
     setReflectionLoading(true);
     setMessage("");
 
-    const { error } = await supabase
-      .from("reflections")
-      .insert({
-        user_id: user.id,
-        task_id: completedTask.id,
-        content: reflectionText.trim(),
-        mood: reflectionMood || null,
-      });
+    const { error } = await supabase.from("reflections").insert({
+      user_id: session.user.id,
+      task_id: completedTask.id,
+      content: reflectionText.trim(),
+      mood: reflectionMood || null,
+    });
 
     if (error) {
       setMessage(`Could not save reflection: ${error.message}`);
@@ -241,16 +185,16 @@ export default function FocusPage() {
     setReflectionLoading(false);
   }
 
-  // ── Global Save Handlers for other screens ─────────────────
+  // ── Global Save Handlers for nested layout sub views ───────
   async function saveProfile(data: any) {
-    if (!session) return;
+    if (!session?.user) return;
     const row = { id: session.user.id, ...data };
     await supabase.from("profiles").upsert(row);
     setProfile(row);
   }
 
   async function saveGoals(newGoals: any[]) {
-    if (!session) return;
+    if (!session?.user) return;
     setGoalsState(newGoals);
     const uid = session.user.id;
     for (const g of newGoals) {
@@ -265,28 +209,23 @@ export default function FocusPage() {
   }
 
   async function saveToday(data: any) {
-    if (!session) return;
+    if (!session?.user) return;
     const row = { ...data, user_id: session.user.id, date: TODAY };
     setToday(row);
     await supabase.from("daily_logs").upsert(row, { onConflict: "user_id,date" });
   }
 
   async function saveChat(messages: any[]) {
-    if (!session) return;
+    if (!session?.user) return;
     setChat(messages);
     const uid = session.user.id;
     await supabase.from("chat_messages").delete().eq("user_id", uid);
     if (messages.length > 0) {
       await supabase.from("chat_messages").insert(
-        messages.map((m) => ({
-          user_id: uid,
-          role: m.role,
-          content: m.content,
-        }))
+        messages.map((m) => ({ user_id: uid, role: m.role, content: m.content }))
       );
     }
   }
-
   // ── Computed Render Variables ──────────────────────────────
   const currentTask = tasks.length > 0 ? tasks[0] : null;
   const currentGoal = currentTask ? goals.find((goal) => goal.id === currentTask.goal_id) : null;
