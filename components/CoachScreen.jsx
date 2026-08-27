@@ -72,7 +72,6 @@ export default function CoachScreen({ profile, chatHistory, saveChat }) {
       setLoading(false)
     }, 1000); // 1-second dynamic typing effect
   }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, background: GREENLT }}>
 
