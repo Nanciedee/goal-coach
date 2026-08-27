@@ -1,5 +1,7 @@
+"use client"; // Required by Next.js for step toggles, form states, and click hooks
+
 import { useState } from 'react'
-import { Btn, DARK } from './ui'
+import { Btn, DARK } from '@/components/ui' // Upgraded to Next.js path alias mapping
 
 const QUIZ = [
   { id: 'name', q: "What's your name?", type: 'text', ph: 'Your first name' },
@@ -45,11 +47,11 @@ export default function Onboarding({ onComplete }) {
     if (step < QUIZ.length - 1) setStep(s => s + 1)
     else onComplete(next)
   }
+  
   function submitText() {
     if (!text.trim()) { setErr('Please enter your name'); return }
     advance(text.trim())
   }
-
   return (
     <div style={{ minHeight: '100vh', background: '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
@@ -72,9 +74,10 @@ export default function Onboarding({ onComplete }) {
           <div>
             <input autoFocus value={text} placeholder={q.ph}
               onChange={e => { setText(e.target.value); setErr('') }}
-              onKeyDown={e => e.key === 'Enter' && submitText()} />
+              onKeyDown={e => e.key === 'Enter' && submitText()}
+              style={{ width: '100%', padding: '12px', border: '1px solid #e0ddd8', borderRadius: 10, fontSize: 15, outline: 'none' }} />
             {err && <p style={{ fontSize: 12, color: '#dc2626', marginTop: 6 }}>{err}</p>}
-            <Btn variant="primary" onClick={submitText} style={{ marginTop: 14 }}>Continue →</Btn>
+            <Btn variant="primary" onClick={submitText} style={{ marginTop: 14 }} full>Continue →</Btn>
           </div>
         )}
 
@@ -86,7 +89,7 @@ export default function Onboarding({ onComplete }) {
                 background: '#fff', border: '1px solid #e0ddd8',
                 fontSize: 15, cursor: 'pointer', color: DARK,
                 boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
+                transition: 'all 0.15s ease',
               }}
                 onMouseOver={e => { e.currentTarget.style.borderColor = DARK; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.10)' }}
                 onMouseOut={e => { e.currentTarget.style.borderColor = '#e0ddd8'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)' }}
