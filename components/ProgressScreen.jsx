@@ -1,4 +1,6 @@
-import { Card, DARK, BLUE, CORAL, GREEN } from './ui'
+"use client"; // Declares this file as a Client Component for dynamic layout execution
+
+import { Card, DARK, BLUE, CORAL, GREEN } from '@/components/ui' // Path updated to Next.js alias
 
 export default function ProgressScreen({ goals, today }) {
   const totalXP    = goals.reduce((s, g) => s + (g.xp    || 0), 0)
@@ -17,9 +19,8 @@ export default function ProgressScreen({ goals, today }) {
     { l: 'Active goals', v: goals.length,      c: GREEN, i: 'target' },
     { l: 'Steps done',   v: stepsTotal,        c: BLUE,  i: 'check'  },
   ]
-
   return (
-    <div style={{ padding: '1.5rem' }}>
+    <div style={{ padding: '1.5rem', fontFamily: 'Arial, sans-serif' }}>
       <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: '1.5rem', color: DARK }}>Progress</h2>
 
       {/* Stats */}
