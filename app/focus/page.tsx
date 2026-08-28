@@ -102,7 +102,7 @@ export default function FocusPage() {
 
   if (loading) {
     return (
-      <main style={{ minHeight: "100vh", background: "#f8f7f4", display: "flex", alignItems: "center", justifyValue: "center", justifyContent: "center", fontFamily: "Arial, sans-serif" }}>
+      <main style={{ minHeight: "100vh", background: "#f8f7f4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Arial, sans-serif" }}>
         <p style={{ color: "#666" }}>Loading your dashboard runway...</p>
       </main>
     );
