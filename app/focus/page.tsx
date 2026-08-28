@@ -60,9 +60,10 @@ export default function FocusPage() {
       return;
     }
 
+    // FIXED: Removed "steps" from the select fields since it doesn't exist in Supabase yet
     const { data: goalData, error: goalError } = await supabase
       .from("goals")
-      .select("id, title, steps, current_step, xp, streak")
+      .select("id, title, current_step, xp, streak")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
@@ -72,9 +73,10 @@ export default function FocusPage() {
       return;
     }
 
+    // Safely inject an empty steps array locally so FocusScreen doesn't break
     const typedGoals = (goalData || []).map(g => ({
       ...g,
-      steps: Array.isArray(g.steps) ? g.steps : []
+      steps: [] 
     }));
 
     setGoals(typedGoals);
