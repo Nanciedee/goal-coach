@@ -99,6 +99,7 @@ export default function FocusPage() {
   const saveToday = async (updatedToday: any) => setTodayState(updatedToday);
   const saveGoals = async (updatedGoals: any) => setGoals(updatedGoals);
   const pendingFocusTask = tasks.find(t => t.status !== "completed") || null;
+
   if (loading) {
     return (
       <main style={{ minHeight: "100vh", background: "#f8f7f4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Arial, sans-serif" }}>
