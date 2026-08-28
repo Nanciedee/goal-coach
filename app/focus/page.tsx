@@ -59,7 +59,7 @@ export default function FocusPage() {
     setGoals(cleanGoals);
 
     if (cleanGoals.length > 0) {
-      setTodayState(prev => ({ ...prev, focus_goal_id: cleanGoals.id }));
+      setTodayState(prev => ({ ...prev, focus_goal_id: cleanGoals[0].id }));
     }
 
     const { data: taskData } = await supabase.from("tasks").select("id, goal_id, title, description, status").eq("user_id", user.id).order("created_at", { ascending: true });
