@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react'
-import { createClient } from '../lib/supabase' // Adjust path if necessary
+import { createClient } from '../lib/supabase'
 import { Btn, Card, Pill, DARK, BLUE, CORAL, GREEN } from './ui'
 
 const BLOCKS = {
@@ -24,7 +24,6 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
   const [aiLoading, setAiLoading] = useState(false)
   const [flash, setFlash]         = useState(false)
   
-  // New input states for creating a goal directly in-app
   const [newGoalTitle, setNewGoalTitle] = useState("");
   const [creatingGoal, setCreatingGoal] = useState(false);
   const [errorMsg, setErrorMsg]         = useState("");
@@ -35,7 +34,6 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
   const totalXP    = goals.reduce((s, g) => s + (g.xp || 0), 0)
   const maxStreak  = goals.reduce((m, g) => Math.max(m, g.streak || 0), 0)
 
-  // New handler function to save goals straight into Supabase
   async function handleAddGoal(e) {
     e.preventDefault();
     if (!newGoalTitle.trim()) return;
@@ -50,14 +48,12 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
       return;
     }
 
+    // FIXED: Only insert columns we verified exist ('user_id', 'title', 'created_at')
     const { data, error } = await supabase
       .from("goals")
       .insert({
         user_id: user.id,
         title: newGoalTitle.trim(),
-        current_step: 0,
-        xp: 0,
-        streak: 0,
         created_at: new Date().toISOString()
       })
       .select()
@@ -69,15 +65,16 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
       return;
     }
 
-    // Combine locally so the UI updates instantly
     const newLocalGoal = {
       ...data,
-      steps: []
+      steps: [],
+      current_step: 0,
+      xp: 0,
+      streak: 0
     };
     
     await saveGoals([...goals, newLocalGoal]);
     
-    // Automatically make this new goal active if it's the first one
     if (goals.length === 0) {
       await saveToday({ ...today, focus_goal_id: data.id });
     }
@@ -117,7 +114,7 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
     const nextStep = Math.min((activeGoal.current_step || 0) + 1, (activeGoal.steps?.length || 1) - 1)
     await saveGoals(goals.map(g =>
       g.id === activeGoal.id
-        ? { ...g, xp: (g.xp || 0) + 10 + bonus, streak: (g.streak || 0) + 1, current_step: nextStep, last_completed: new Date().toDateString() }
+        ? { ...g, xp: (g.xp || 0) + 10 + bonus, streak: (g.streak || 0) + 1, current_step: nextStep }
         : g
     ))
     await saveToday({ ...today, completed: true })
@@ -126,7 +123,6 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
 
   return (
     <div style={{ padding: '1.5rem', fontFamily: 'Arial, sans-serif' }}>
-      {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: '1.5rem' }}>
         <Card style={{ padding: '12px 14px' }}>
           <p style={{ fontSize: 10, color: '#888', marginBottom: 3, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>XP</p>
@@ -152,7 +148,6 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
           <i className="ti ti-target" style={{ fontSize: 40, color: '#ccc', display: 'block', marginBottom: 14 }} />
           <p style={{ color: '#666', fontSize: 15, marginBottom: '20px' }}>Add a goal to get your first focus step</p>
           
-          {/* Form to submit a new goal text value */}
           <form onSubmit={handleAddGoal} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <input 
               type="text" 
@@ -166,7 +161,8 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
                 border: '1px solid #ddd',
                 fontSize: '14px',
                 boxSizing: 'border-box',
-                outline: 'none'
+                outline: 'none',
+                color: '#333'
               }}
             />
             <button 
@@ -198,7 +194,6 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
           </p>
           <p style={{ color: '#aaa', fontSize: 13, marginTop: 10 }}>Come back tomorrow for your next step.</p>
         </Card>
-
       ) : (
         <>
           <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontWeight: 600 }}>
