@@ -60,10 +60,10 @@ export default function FocusPage() {
       return;
     }
 
-    // FIXED: Removed "steps" from the select fields since it doesn't exist in Supabase yet
+    // FIXED: Only select columns that definitely exist ('id' and 'title')
     const { data: goalData, error: goalError } = await supabase
       .from("goals")
-      .select("id, title, current_step, xp, streak")
+      .select("id, title")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
@@ -73,10 +73,13 @@ export default function FocusPage() {
       return;
     }
 
-    // Safely inject an empty steps array locally so FocusScreen doesn't break
+    // Inject fallback states locally so your app keeps functioning safely
     const typedGoals = (goalData || []).map(g => ({
       ...g,
-      steps: [] 
+      steps: [],
+      current_step: 0,
+      xp: 0,
+      streak: 0
     }));
 
     setGoals(typedGoals);
