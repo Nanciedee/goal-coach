@@ -2,171 +2,108 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase";
+
+import NavBar from "../../components/NavBar";
+import MainFocusView from "../../components/MainFocusView";
 import FocusScreen from "../../components/FocusScreen";
-import { DARK, CORAL } from "../../components/ui";
+import GoalsScreen from "../../components/GoalsScreen";
+import CoachScreen from "../../components/CoachScreen";
+import JournalScreen from "../../components/JournalScreen";
+import ProgressScreen from "../../components/ProgressScreen";
 
-type Task = {
-  id: string;
-  goal_id: string;
-  title: string;
-  description: string | null;
-  status: string;
-};
-
-type Goal = {
-  id: string;
-  title: string;
-  description: string | null;
-  status: string;
-};
+import { DARK } from "../../components/ui";
 
 export default function FocusPage() {
   const supabase = createClient();
 
-  const [activeTab, setActiveTab] = useState<"today" | "commitments">("today");
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
+  const [currentScreen, setCurrentScreen] = useState<string>("focus");
+  const [profile, setProfile] = useState<any>({});
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [reflections, setReflections] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [completing, setCompleting] = useState(false);
 
-  const [completedTask, setCompletedTask] = useState<Task | null>(null);
+  const [completedTask, setCompletedTask] = useState<any | null>(null);
   const [reflectionText, setReflectionText] = useState("");
   const [reflectionMood, setReflectionMood] = useState("");
   const [reflectionLoading, setReflectionLoading] = useState(false);
   const [reflectionSaved, setReflectionSaved] = useState(false);
 
-  async function loadFocusTask() {
+  const [todayState, setTodayState] = useState({
+    focus_goal_id: "",
+    focus_step_override: null,
+    energy_level: 3,
+    completed: false,
+    ai_reframe: ""
+  });
+
+  async function loadApplicationData() {
     setLoading(true);
-    setMessage("");
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setMessage("Please sign in first.");
       setLoading(false);
       return;
     }
 
-    // Load active goals using your genuine schema columns
-    const { data: goalData, error: goalError } = await supabase
-      .from("goals")
-      .select("id, title, description, status")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true });
+    const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+    setProfile(profileData || {});
 
-    if (goalError) {
-      setMessage(goalError.message);
-      setLoading(false);
-      return;
+    const { data: goalData, error: goalError } = await supabase.from("goals").select("id, title, description, status").eq("user_id", user.id).order("created_at", { ascending: true });
+    if (goalError) { setMessage(goalError.message); setLoading(false); return; }
+
+    const cleanGoals = (goalData || []).map(g => ({ ...g, steps: [], current_step: 0, xp: 0, streak: 0 }));
+    setGoals(cleanGoals);
+
+    if (cleanGoals.length > 0) {
+      setTodayState(prev => ({ ...prev, focus_goal_id: cleanGoals.id }));
     }
 
-    setGoals(goalData || []);
-
-    // Load pending one-thing tasks
-    const { data: taskData, error: taskError } = await supabase
-      .from("tasks")
-      .select("id, goal_id, title, description, status")
-      .eq("user_id", user.id)
-      .neq("status", "completed")
-      .order("created_at", { ascending: true })
-      .limit(1);
-
-    if (taskError) {
-      setMessage(taskError.message);
-      setLoading(false);
-      return;
-    }
-
+    const { data: taskData } = await supabase.from("tasks").select("id, goal_id, title, description, status").eq("user_id", user.id).order("created_at", { ascending: true });
     setTasks(taskData || []);
+
+    const { data: reflectionData } = await supabase.from("reflections").select("id, user_id, task_id, content, mood, created_at").eq("user_id", user.id).order("created_at", { ascending: false });
+    setReflections(reflectionData || []);
+
     setLoading(false);
   }
 
-  useEffect(() => {
-    loadFocusTask();
-  }, []);
+  useEffect(() => { loadApplicationData(); }, []);
 
-  async function handleComplete(task: Task) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setMessage("Please sign in first.");
-      return;
-    }
-
+  async function handleComplete(task: any) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     setCompleting(true);
-    setMessage("");
-
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", task.id)
-      .eq("user_id", user.id);
-
-    if (error) {
-      setMessage(error.message);
-      setCompleting(false);
-      return;
-    }
-
-    setTasks([]);
+    await supabase.from("tasks").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", task.id);
+    await loadApplicationData();
     setCompletedTask(task);
-    setMessage("");
     setCompleting(false);
   }
 
   async function handleSaveReflection() {
     if (!completedTask) return;
-
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setMessage("Please sign in first.");
-      return;
-    }
-
-    if (!reflectionText.trim()) {
-      setMessage("Please write a short reflection.");
-      return;
-    }
+    if (!user || !reflectionText.trim()) return;
 
     setReflectionLoading(true);
-    setMessage("");
-
-    const { error } = await supabase
-      .from("reflections")
-      .insert({
-        user_id: user.id,
-        task_id: completedTask.id,
-        content: reflectionText.trim(),
-        mood: reflectionMood || null,
-      });
-
-    if (error) {
-      setMessage(`Could not save reflection: ${error.message}`);
-      setReflectionLoading(false);
-      return;
-    }
-
+    await supabase.from("reflections").insert({ user_id: user.id, task_id: completedTask.id, content: reflectionText.trim(), mood: reflectionMood || null });
     setReflectionText("");
-    setReflectionMood("");
     setReflectionSaved(true);
-    setMessage("Reflection saved! 💭");
+    await loadApplicationData();
     setReflectionLoading(false);
   }
 
-  const currentTask = tasks.length > 0 ? tasks[0] : null;
+  const saveToday = async (updatedToday: any) => setTodayState(updatedToday);
+  const saveGoals = async (updatedGoals: any) => setGoals(updatedGoals);
+  const pendingFocusTask = tasks.find(t => t.status !== "completed") || null;
 
   if (loading) {
     return (
-      <main style={{ minHeight: "100vh", background: "#f8f7f4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Arial, sans-serif" }}>
-        <p style={{ color: "#666" }}>Loading your focus...</p>
+      <main style={{ minHeight: "100vh", background: "#f8f7f4", display: "flex", alignItems: "center", justifyValue: "center", justifyContent: "center", fontFamily: "Arial, sans-serif" }}>
+        <p style={{ color: "#666" }}>Loading your dashboard runway...</p>
       </main>
     );
   }
@@ -174,64 +111,30 @@ export default function FocusPage() {
   return (
     <main style={{ minHeight: "100vh", background: "#f8f7f4", padding: "40px 24px", fontFamily: "Arial, sans-serif" }}>
       <div style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
-        
         <button type="button" onClick={() => { window.location.href = "/"; }} style={{ background: "none", border: "none", padding: 0, color: "#666", cursor: "pointer", fontSize: "14px", marginBottom: "25px", textDecoration: "underline" }}>
-          ← Back to Goal Coach
+          ← Back to Goal Coach Hub
         </button>
 
-        <div style={{ display: "flex", gap: "12px", marginBottom: "24px", borderBottom: "1px solid #e2e1dc", paddingBottom: "12px" }}>
-          <button onClick={() => setActiveTab("today")} style={{ padding: "10px 18px", background: activeTab === "today" ? DARK : "transparent", color: activeTab === "today" ? "#ffffff" : "#555555", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: 600, fontSize: "14px", transition: "all 0.15s ease" }}>
-            🎯 Today's Focus
-          </button>
-          <button onClick={() => setActiveTab("commitments")} style={{ padding: "10px 18px", background: activeTab === "commitments" ? DARK : "transparent", color: activeTab === "commitments" ? "#ffffff" : "#555555", border: "none", borderRadius: "20px", cursor: "pointer", fontWeight: 600, fontSize: "14px", transition: "all 0.15s ease" }}>
-            📋 Commitments
-          </button>
+        <div style={{ background: "white", borderRadius: "16px 16px 0 0", overflow: "hidden", boxShadow: "0 4px 15px rgba(0,0,0,0.03)", borderBottom: "1px solid #eee" }}>
+          <NavBar screen={currentScreen} setScreen={setCurrentScreen} />
         </div>
 
-        <div style={{ background: "white", padding: "40px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
-          {activeTab === "today" && (
-            <div>
-              <p style={{ color: "#777", fontSize: "14px", marginBottom: "8px", letterSpacing: "0.5px" }}>ONE-THING FOCUS</p>
-              <h1 style={{ fontSize: "36px", marginTop: 0, marginBottom: "10px" }}>Today's focus</h1>
-              <p style={{ color: "#666", fontSize: "17px", lineHeight: 1.5 }}>
-                You don't need to do everything today.<br />Just focus on one small step.
-              </p>
-              <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "30px 0" }} />
-
-              {!currentTask && completedTask && !reflectionSaved ? (
-                <div>
-                  <div style={{ textAlign: "center", padding: "10px 0 20px 0" }}>
-                    <div style={{ fontSize: "42px", marginBottom: "10px" }}>🎉</div>
-                    <h2 style={{ marginTop: 0, marginBottom: "8px" }}>You did it!</h2>
-                    <p style={{ color: "#666", lineHeight: 1.5, margin: 0 }}>Take a moment to notice how that went.</p>
-                  </div>
-                  <div style={{ background: "#f8f7f4", padding: "15px", borderRadius: "10px", marginBottom: "20px" }}>
-                    <strong>{completedTask.title}</strong>
-                  </div>
-                  <label htmlFor="focusReflection" style={{ display: "block", marginBottom: "8px" }}>How did it go?</label>
-                  <textarea id="focusReflection" value={reflectionText} onChange={(e) => setReflectionText(e.target.value)} style={{ width: "100%", height: "100px", padding: "12px", borderRadius: "8px", border: "1px solid #ccc", marginBottom: "15px", boxSizing: "border-box" }} />
-                  <button onClick={handleSaveReflection} disabled={reflectionLoading} style={{ width: "100%", padding: "12px", background: DARK, color: "#fff", border: "none", borderRadius: "8px", cursor: "pointer" }}>
-                    {reflectionLoading ? "Saving..." : "Save Reflection"}
-                  </button>
-                </div>
-              ) : currentTask ? (
-                <div>
-                  <h3 style={{ fontSize: "20px", marginBottom: "10px" }}>{currentTask.title}</h3>
-                  {currentTask.description && <p style={{ color: "#555", marginBottom: "20px" }}>{currentTask.description}</p>}
-                  <button onClick={() => handleComplete(currentTask)} disabled={completing} style={{ padding: "12px 24px", background: CORAL, color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
-                    {completing ? "Completing..." : "Complete Task"}
-                  </button>
-                </div>
-              ) : (
-                <p style={{ color: "#666" }}>All tasks complete for today! Check your commitments tab.</p>
-              )}
-              {message && <p style={{ color: "red", marginTop: "10px" }}>{message}</p>}
-            </div>
+        <div style={{ background: "white", padding: "40px", borderRadius: "0 0 20px 20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+          {currentScreen === "focus" && (
+            <MainFocusView 
+              pendingFocusTask={pendingFocusTask} completedTask={completedTask} reflectionSaved={reflectionSaved}
+              reflectionText={reflectionText} setReflectionText={setReflectionText} handleSaveReflection={handleSaveReflection}
+              reflectionLoading={reflectionLoading} handleComplete={handleComplete} completing={completing}
+              FocusScreenComponent={<FocusScreen profile={profile} goals={goals} today={todayState} saveToday={saveToday} saveGoals={saveGoals} />}
+            />
           )}
 
-          {activeTab === "commitments" && (
-            <FocusScreen initialGoals={goals} onRefreshGoals={loadFocusTask} />
-          )}
+          {currentScreen === "goals" && <GoalsScreen profile={profile} goals={goals} tasks={tasks} onRefresh={loadApplicationData} />}
+          {currentScreen === "coach" && <CoachScreen profile={profile} goals={goals} tasks={tasks} reflections={reflections} />}
+          {currentScreen === "journal" && <JournalScreen profile={profile} reflections={reflections} tasks={tasks} />}
+          {currentScreen === "progress" && <ProgressScreen profile={profile} goals={goals} tasks={tasks} reflections={reflections} />}
+
+          {message && <p style={{ color: "red", marginTop: "20px" }}>{message}</p>}
         </div>
       </div>
     </main>
