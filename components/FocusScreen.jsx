@@ -1,4 +1,4 @@
-"use client"; // Required by Next.js for button interactions, state tracking, and click event flows
+"use client";
 
 import { useState } from 'react'
 import { Btn, Card, Pill, DARK, BLUE, CORAL, GREEN } from './ui'
@@ -10,7 +10,6 @@ const BLOCKS = {
   inconsistency:   'motivation fluctuation and habit gaps',
 }
 
-// Local CBT Behavioral Reassurance Generator (No AI needed)
 const LOCAL_REFRAMES = {
   1: "Energy is very low. Lowering the bar isn't quitting; it's a strategic retreat to protect your consistency.",
   2: "Energy is low. Be gentle with your timeline today. A small action counts just as much as a giant leap.",
@@ -33,17 +32,12 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
     if (!activeGoal?.steps?.length) return
     setAiLoading(true)
     
-    // Simulating a quick visual local process latency for a realistic, premium app experience
     setTimeout(async () => {
       const currentEnergy = today.energy_level || 3;
-      
-      // Calculate target step index based on user energy setting variations
       let targetIndex = activeGoal.current_step || 0;
       if (currentEnergy <= 2) {
-        // Drop difficulty step setting backward if energy is heavily drained
         targetIndex = Math.max(0, targetIndex - 1);
       } else if (currentEnergy >= 4) {
-        // Challenge user slightly forward if energy levels peak out
         targetIndex = Math.min(activeGoal.steps.length - 1, targetIndex + 1);
       }
 
@@ -71,9 +65,9 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
     await saveToday({ ...today, completed: true })
     setTimeout(() => setFlash(false), 2000)
   }
+
   return (
     <div style={{ padding: '1.5rem', fontFamily: 'Arial, sans-serif' }}>
-      {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: '1.5rem' }}>
         <Card style={{ padding: '12px 14px' }}>
           <p style={{ fontSize: 10, color: '#888', marginBottom: 3, fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>XP</p>
@@ -99,7 +93,6 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
           <i className="ti ti-target" style={{ fontSize: 44, color: '#ccc', display: 'block', marginBottom: 14 }} />
           <p style={{ color: '#888', fontSize: 15 }}>Add a goal to get your first focus step</p>
         </Card>
-
       ) : today.completed ? (
         <Card style={{ textAlign: 'center', padding: '2.5rem', border: `2px solid ${GREEN}` }}>
           <i className="ti ti-circle-check" style={{ fontSize: 48, color: GREEN, display: 'block', marginBottom: 14 }} />
@@ -109,7 +102,6 @@ export default function FocusScreen({ profile, goals, today, saveToday, saveGoal
           </p>
           <p style={{ color: '#aaa', fontSize: 13, marginTop: 10 }}>Come back tomorrow for your next step.</p>
         </Card>
-
       ) : (
         <>
           <p style={{ fontSize: 11, color: '#888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, fontWeight: 600 }}>
