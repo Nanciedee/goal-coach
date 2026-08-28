@@ -16,10 +16,8 @@ type Task = {
 type Goal = {
   id: string;
   title: string;
-  steps?: string[];
-  current_step?: number;
-  xp?: number;
-  streak?: number;
+  description: string | null;
+  status: string;
 };
 
 export default function FocusPage() {
@@ -38,14 +36,6 @@ export default function FocusPage() {
   const [reflectionLoading, setReflectionLoading] = useState(false);
   const [reflectionSaved, setReflectionSaved] = useState(false);
 
-  const [todayState, setTodayState] = useState({
-    focus_goal_id: "",
-    focus_step_override: null,
-    energy_level: 3,
-    completed: false,
-    ai_reframe: ""
-  });
-
   async function loadFocusTask() {
     setLoading(true);
     setMessage("");
@@ -60,10 +50,10 @@ export default function FocusPage() {
       return;
     }
 
-    // FIXED: Only select columns that definitely exist ('id' and 'title')
+    // Load active goals using your genuine schema columns
     const { data: goalData, error: goalError } = await supabase
       .from("goals")
-      .select("id, title")
+      .select("id, title, description, status")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
@@ -73,21 +63,9 @@ export default function FocusPage() {
       return;
     }
 
-    // Inject fallback states locally so your app keeps functioning safely
-    const typedGoals = (goalData || []).map(g => ({
-      ...g,
-      steps: [],
-      current_step: 0,
-      xp: 0,
-      streak: 0
-    }));
+    setGoals(goalData || []);
 
-    setGoals(typedGoals);
-
-    if (typedGoals.length > 0) {
-      setTodayState(prev => ({ ...prev, focus_goal_id: typedGoals[0].id }));
-    }
-
+    // Load pending one-thing tasks
     const { data: taskData, error: taskError } = await supabase
       .from("tasks")
       .select("id, goal_id, title, description, status")
@@ -138,21 +116,6 @@ export default function FocusPage() {
       return;
     }
 
-    const { error: xpError } = await supabase
-      .from("xp")
-      .insert({
-        user_id: user.id,
-        amount: 10,
-        reason: "task_completed",
-        task_id: task.id,
-      });
-
-    if (xpError) {
-      setMessage(`Task completed, but XP could not be saved: ${xpError.message}`);
-      setCompleting(false);
-      return;
-    }
-
     setTasks([]);
     setCompletedTask(task);
     setMessage("");
@@ -197,14 +160,6 @@ export default function FocusPage() {
     setMessage("Reflection saved! 💭");
     setReflectionLoading(false);
   }
-
-  const saveToday = async (updatedToday: any) => {
-    setTodayState(updatedToday);
-  };
-
-  const saveGoals = async (updatedGoals: any) => {
-    setGoals(updatedGoals);
-  };
 
   const currentTask = tasks.length > 0 ? tasks[0] : null;
 
@@ -275,7 +230,7 @@ export default function FocusPage() {
           )}
 
           {activeTab === "commitments" && (
-            <FocusScreen profile={{}} goals={goals} today={todayState} saveToday={saveToday} saveGoals={saveGoals} />
+            <FocusScreen initialGoals={goals} onRefreshGoals={loadFocusTask} />
           )}
         </div>
       </div>
