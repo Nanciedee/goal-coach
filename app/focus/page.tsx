@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "../../lib/supabase";
-import FocusScreen from "../../components/FocusScreen";
-import { DARK, CORAL } from "../../components/ui";
+import { createClient } from "../lib/supabase"; // Note: Adjust dots if inside /app/focus/page.tsx
+import FocusFormView from "../components/FocusFormView";
+import FocusScreen from "../components/FocusScreen";
+import { DARK, CORAL } from "../components/ui";
 
 type Task = {
   id: string;
