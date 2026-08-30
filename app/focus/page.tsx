@@ -53,10 +53,10 @@ export default function FocusPage() {
 
     // Load active goals using your genuine schema columns
     const { data: goalData, error: goalError } = await supabase
-  .from("goals")
-  .select("id, title, description, status")
-  .eq("user_id", user.id)
-  .order("created_at", { ascending: true });
+      .from("goals")
+      .select("id, title, current_step, xp, streak")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true });
 
     if (goalError) {
       setMessage(goalError.message);
@@ -104,12 +104,8 @@ export default function FocusPage() {
 
     const { error } = await supabase
       .from("tasks")
-      .update({
-        status: "completed",
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", task.id)
-      .eq("user_id", user.id);
+      .update({ status: "completed" })
+      .eq("id", task.id);
 
     if (error) {
       setMessage(error.message);
