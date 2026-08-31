@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "../lib/supabase"; // Changed "../../" to "../" because this file is in /app, not /app/focus
+import { createClient } from "../lib/supabase";
 
 import NavBar from "../components/NavBar";
-import MainFocusView from "../components/MainFocusView";
 import FocusScreen from "../components/FocusScreen";
 import GoalsScreen from "../components/GoalsScreen";
 import CoachScreen from "../components/CoachScreen";
@@ -15,6 +14,14 @@ import { DARK } from "../components/ui";
 
 type Goal = {
   id: string;
+  title: string;
+  description: string | null;
+  status: string;
+};
+
+type Task = {
+  id: string;
+  goal_id: string;
   title: string;
   description: string | null;
   status: string;
@@ -65,7 +72,6 @@ export default function FocusPage() {
     const cleanGoals = (goalData || []).map(g => ({ ...g, steps: [], current_step: 0, xp: 0, streak: 0 }));
     setGoals(cleanGoals);
 
-    // CORRIGÉ ICI : cleanGoals[0].id au lieu de cleanGoals.id
     if (cleanGoals.length > 0) {
       setTodayState(prev => ({ ...prev, focus_goal_id: cleanGoals[0].id }));
     }
@@ -104,36 +110,33 @@ export default function FocusPage() {
     setReflectionLoading(false);
   }
 
-  const saveToday = async (updatedToday: any) => setTodayState(updatedToday);
-  const saveGoals = async (updatedGoals: any) => setGoals(updatedGoals);
-  const pendingFocusTask = tasks.find(t => t.status !== "completed") || null;
-
   if (loading) {
     return (
       <main style={{ minHeight: "100vh", background: "#f8f7f4", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Arial, sans-serif" }}>
-        <p style={{ color: "#666" }}>Loading your dashboard runway...</p>
+        <p style={{ color: "#666" }}>Loading Goal Coach...</p>
       </main>
     );
   }
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f8f7f4", padding: "40px 24px", fontFamily: "Arial, sans-serif" }}>
-      <div style={{ width: "100%", maxWidth: "600px", margin: "0 auto" }}>
-        <button type="button" onClick={() => { window.location.href = "/"; }} style={{ background: "none", border: "none", padding: 0, color: "#666", cursor: "pointer", fontSize: "14px", marginBottom: "25px", textDecoration: "underline" }}>
-          ← Back to Goal Coach Hub
-        </button>
-
-        <div style={{ background: "white", borderRadius: "16px 16px 0 0", overflow: "hidden", boxShadow: "0 4px 15px rgba(0,0,0,0.03)", borderBottom: "1px solid #eee" }}>
-          <NavBar screen={currentScreen} setScreen={setCurrentScreen} />
-        </div>
-
-        <div style={{ background: "white", padding: "40px", borderRadius: "0 0 20px 20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+    <main style={{ minHeight: "100vh", background: "#f8f7f4", fontFamily: "Arial, sans-serif" }}>
+      <NavBar currentScreen={currentScreen} setCurrentScreen={setCurrentScreen} profile={profile} />
+      
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "40px 24px" }}>
+        <div style={{ background: "white", padding: "40px", borderRadius: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.05)" }}>
+          
           {currentScreen === "focus" && (
-            <MainFocusView 
-              pendingFocusTask={pendingFocusTask} completedTask={completedTask} reflectionSaved={reflectionSaved}
-              reflectionText={reflectionText} setReflectionText={setReflectionText} handleSaveReflection={handleSaveReflection}
-              reflectionLoading={reflectionLoading} handleComplete={handleComplete} completing={completing}
-              FocusScreenComponent={<FocusScreen profile={profile} goals={goals} today={todayState} saveToday={saveToday} saveGoals={saveGoals} />}
+            <FocusScreen 
+              tasks={tasks} 
+              goals={goals} 
+              handleComplete={handleComplete} 
+              completing={completing} 
+              completedTask={completedTask}
+              reflectionText={reflectionText}
+              setReflectionText={setReflectionText}
+              handleSaveReflection={handleSaveReflection}
+              reflectionLoading={reflectionLoading}
+              reflectionSaved={reflectionSaved}
             />
           )}
 
