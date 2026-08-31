@@ -1,25 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "../lib/supabase";
+import { createClient } from "../lib/supabase"; // Changed "../../" to "../" because this file is in /app, not /app/focus
+
+import NavBar from "../components/NavBar";
+import MainFocusView from "../components/MainFocusView";
+import FocusScreen from "../components/FocusScreen";
+import GoalsScreen from "../components/GoalsScreen";
+import CoachScreen from "../components/CoachScreen";
+import JournalScreen from "../components/JournalScreen";
+import ProgressScreen from "../components/ProgressScreen";
+
+import { DARK } from "../components/ui";
 
 type Goal = {
   id: string;
   title: string;
-  descripti"use client";
-
-import { useEffect, useState } from "react";
-import { createClient } from "../../lib/supabase";
-
-import NavBar from "../../components/NavBar";
-import MainFocusView from "../../components/MainFocusView";
-import FocusScreen from "../../components/FocusScreen";
-import GoalsScreen from "../../components/GoalsScreen";
-import CoachScreen from "../../components/CoachScreen";
-import JournalScreen from "../../components/JournalScreen";
-import ProgressScreen from "../../components/ProgressScreen";
-
-import { DARK } from "../../components/ui";
+  description: string | null;
+  status: string;
+};
 
 export default function FocusPage() {
   const supabase = createClient();
