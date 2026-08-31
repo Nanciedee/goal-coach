@@ -215,19 +215,36 @@ export default function FocusPage() {
                 <div>
                   <h3 style={{ fontSize: "20px", marginBottom: "10px" }}>{currentTask.title}</h3>
                   {currentTask.description && <p style={{ color: "#555", marginBottom: "20px" }}>{currentTask.description}</p>}
-                  <button onClick={() => handleComplete(currentTask)} disabled={completing} style={{ padding: "12px 24px", background: CORAL, color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
-                    {completing ? "Completing..." : "Complete Task"}
+                  <button onClick={() => handleComplete(currentTask)} disabled={completing} style={{ width: "100%", padding: "16px", background: DARK, color: "#fff", border: "none", borderRadius: "12px", cursor: "pointer", fontSize: "16px", fontWeight: "bold" }}>
+                    {completing ? "Completing..." : "Mark as Completed ✓"}
                   </button>
                 </div>
               ) : (
-                <p style={{ color: "#666" }}>All tasks complete for today! Check your commitments tab.</p>
+                <div style={{ textAlign: "center", padding: "20px 0" }}>
+                  <p style={{ color: "#666", fontSize: "16px", margin: 0 }}>
+                    All tasks are complete for today! 🎉
+                  </p>
+                </div>
               )}
-              {message && <p style={{ color: "red", marginTop: "10px" }}>{message}</p>}
             </div>
           )}
 
           {activeTab === "commitments" && (
-            <FocusScreen initialGoals={goals} onRefreshGoals={loadFocusTask} />
+            <div>
+              <h2 style={{ fontSize: "24px", marginTop: 0, marginBottom: "20px" }}>Your Long-term Commitments</h2>
+              {goals.length === 0 ? (
+                <p style={{ color: "#666" }}>No active goals found.</p>
+              ) : (
+                <ul style={{ paddingLeft: "20px", margin: 0 }}>
+                  {goals.map((goal) => (
+                    <li key={goal.id} style={{ marginBottom: "15px", fontSize: "16px" }}>
+                      <strong>{goal.title}</strong>
+                      {goal.description && <p style={{ color: "#666", margin: "4px 0 0 0", fontSize: "14px" }}>{goal.description}</p>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </div>
       </div>
