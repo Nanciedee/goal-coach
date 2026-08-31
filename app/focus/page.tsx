@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "../../lib/supabase"; // Changed from "../" to "../../"
+import { createClient } from "../../lib/supabase"; 
 import FocusFormView from "../../components/FocusFormView";
 import FocusScreen from "../../components/FocusScreen";
-import { DARK, CORAL } from "../../components/ui"; // Changed from "../" to "../../"
-
+import { DARK, CORAL } from "../../components/ui";
 
 type Task = {
   id: string;
