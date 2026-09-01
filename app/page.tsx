@@ -63,9 +63,6 @@ export default function FocusPage() {
       return;
     }
 
-    const { data: profileData } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    setProfile(profileData || {});
-
     const { data: goalData, error: goalError } = await supabase.from("goals").select("id, title, description, status").eq("user_id", user.id).order("created_at", { ascending: true });
     if (goalError) { setMessage(goalError.message); setLoading(false); return; }
 
