@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "../../lib/supabase"; 
-import FocusFormView from "../../components/FocusFormView";
+import { createClient } from "../../lib/supabase";
 import FocusScreen from "../../components/FocusScreen";
 import { DARK, CORAL } from "../../components/ui";
 
@@ -51,10 +50,9 @@ export default function FocusPage() {
       return;
     }
 
-    // Load active goals using your genuine schema columns
     const { data: goalData, error: goalError } = await supabase
       .from("goals")
-      .select("id, title, current_step, xp, streak")
+      .select("id, title, description, status")
       .eq("user_id", user.id)
       .order("created_at", { ascending: true });
 
@@ -66,7 +64,6 @@ export default function FocusPage() {
 
     setGoals(goalData || []);
 
-    // Load pending one-thing tasks
     const { data: taskData, error: taskError } = await supabase
       .from("tasks")
       .select("id, goal_id, title, description, status")
@@ -104,8 +101,12 @@ export default function FocusPage() {
 
     const { error } = await supabase
       .from("tasks")
-      .update({ status: "completed" })
-      .eq("id", task.id);
+      .update({
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      })
+      .eq("id", task.id)
+      .eq("user_id", user.id);
 
     if (error) {
       setMessage(error.message);
@@ -194,6 +195,8 @@ export default function FocusPage() {
                 You don't need to do everything today.<br />Just focus on one small step.
               </p>
               <hr style={{ border: "none", borderTop: "1px solid #eee", margin: "30px 0" }} />
+
+              {message && <p style={{ color: "red", fontSize: "14px" }}>{message}</p>}
 
               {!currentTask && completedTask && !reflectionSaved ? (
                 <div>
