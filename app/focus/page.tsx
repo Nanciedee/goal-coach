@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase'
-import { C, type GoalStep, type ChatMessage, type MediaItem } from '@/lib/types'
-import { generateGoalSteps, recalibrateStep } from '@/lib/goal-generator'
-import { getOsirisResponse } from '@/lib/cbt-engine'
+import { createClient } from '../../lib/supabase'
+import { C, type GoalStep, type ChatMessage, type MediaItem } from '../../lib/types'
+import { generateGoalSteps, recalibrateStep } from '../../lib/goal-generator'
+import { getOsirisResponse } from '../../lib/cbt-engine'
 
 interface Profile {
   id: string
