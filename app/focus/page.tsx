@@ -558,7 +558,7 @@ ${jMedia.length ? `<div class="section"><h2>Photos &amp; Media (${jMedia.length}
             <div style={{ fontSize: 10, color: C.sage, background: '#e6f4ea', borderRadius: 10, padding: '3px 10px', fontWeight: 600 }}>OFFLINE</div>
           </div>
           <div style={{ background: '#fff8f0', borderBottom: '0.5px solid #ffd8a8', padding: '8px 16px', flexShrink: 0 }}>
-            <div style={{ fontSize: 11, color: '#7a4f00', lineHeight: 1.5 }}>Osiris is a coaching tool — not a crisis service. Need urgent support? Call or text <strong>988</strong> · Text HOME to <strong>741741</strong></div>
+            <div style={{ fontSize: 11, color: '#7a4f00', lineHeight: 1.5 }}>Osiris is a coaching tool — not a crisis service. </div>
           </div>
           <div ref={chatRef} style={{ flex: 1, overflow: 'auto', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10, paddingBottom: 80 }}>
             {chatHistory.length === 0 && (
